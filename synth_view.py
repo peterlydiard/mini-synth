@@ -30,7 +30,7 @@ SAMPLE_RATE = 44100
 class View:
     def __init__(self, controller):
         self.controller = controller
-        self.old_sound = None
+        self.sound = None
 
     def main(self):
         self._debug_1("In view.main()")
@@ -55,11 +55,10 @@ class View:
         #self.play_button.text_color = "grey"
         
         self.frequency_button = Slider(self.app, start=200, end=500,
-                         width=200, command=self.handle_set_frequency)
+                         width=300, command=self.handle_set_frequency)
         
         self.screen.rectangle(10, 10, 210, 210, color="light blue")
-        self.screen.oval(30, 30, 50, 50, color="white", outline=True)
-
+        
         # set up exit function
         self.app.when_closed = self.close_app
         
@@ -71,8 +70,9 @@ class View:
         
         
     def play_sound(self, wave):
-        if not self.old_sound is None:
-            self.old_sound.stop()
+        if not self.sound is None:
+            self.sound.fadeout(500)
+            del self.sound
         # Ensure that highest value is in 16-bit range
         audio = wave * (2**15 - 1) / np.max(np.abs(wave))
         # Convert to 16-bit data
@@ -80,8 +80,29 @@ class View:
         # create a pygame Sound object and play it.
         sound = pygame.sndarray.make_sound(audio)
         sound.play()
-        self.old_sound = sound
-           
+        self.sound = sound
+        
+        self.plot_sound(wave)
+        
+    def plot_sound(self, wave):
+        left_channel = np.hsplit(wave,2)[0]
+        right_channel = np.hsplit(wave,2)[1]
+        
+        self.screen.clear()
+        origin_x = 0
+        origin_y = int(self.screen.height / 2)
+        previous_x = origin_x
+        previous_y = origin_y
+        num_points = 500
+        scale_x = (self.screen.width - 5)/ num_points
+        scale_y = (self.screen.height - 5)/ 2.0
+        for i in range(num_points):
+            # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
+            plot_y = int(origin_y - (scale_y * left_channel[i]))
+            plot_x = int(origin_x + (scale_x * i))
+            self.screen.line(previous_x, previous_y, plot_x, plot_y, color="dark blue", width=1)
+            previous_x = plot_x
+            previous_y = plot_y
            
     def close_app(self):
         print("\nNormal termination")
@@ -108,6 +129,8 @@ class View:
         
     def handle_request_play(self):
         self.controller.on_request_play()
+        if not self.sound is None:
+            self.sound.play()
         
     def handle_request_save(self):
         self.controller.on_request_save()
@@ -118,3 +141,34 @@ class View:
 
 #--------------------------- end of View class ---------------------------
 
+#--------------------------- Test Functions ------------------------------
+if __name__ == "__main__":
+
+    class TestController:
+        def __init__(self):
+            self.waveform = "Sine"
+            self.frequency = 440
+            self.view = View(self)
+        
+        def main(self):
+            print("In main of test controller")
+            self.view.main()
+
+        def on_request_waveform(self, waveform):
+            print("Set waveform requested: " + waveform)
+            
+        def on_request_frequency(self, frequency):
+            print("Set frequency to " + str(frequency))
+            
+        def on_request_play(self):
+            print("Play Sound requested")
+                  
+        def on_request_save(self):
+            print("Save game requested")
+            
+        def on_request_restore(self):
+            print("Restore game requested")
+            
+            
+    tc = TestController()
+    tc.main()

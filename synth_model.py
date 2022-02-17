@@ -6,7 +6,7 @@ import copy
 # import numpy
 import numpy as np
 # import simpleaudio as sa
-from scipy import signal
+#from scipy import signal
 
 
 ######################### Global constants #########################
@@ -21,6 +21,7 @@ class Model:
             
     # Create a unit-amplitude sine wave, stereo by default.
     def sine_wave(self, frequency, duration, stereo=True):
+        #print("Sine wave freq, duration = " + str(frequency) + ", " + str(duration))
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
         t = np.linspace(0, duration, int(duration * self.sample_rate), False)
         # Generate a sine wave
@@ -31,12 +32,12 @@ class Model:
 
     # Create a unit-amplitude sawtooth wave, stereo by default.
     def sawtooth_wave(self, frequency, duration, stereo=True):
-        print(" wave freq, duration = " + str(frequency) + ", " + str(duration))
+        #print("Saw wave freq, duration = " + str(frequency) + ", " + str(duration))
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
-        t = np.linspace(0, (2 * frequency * duration), int(duration * self.sample_rate), False)
+        ramp = np.linspace(1.0, (2 * frequency * duration) + 1, int(duration * self.sample_rate), False)
         # t = np.linspace(0, 2000.1, 100, False)
         # Generate a sawtooth wave
-        note = (t % 2.0) - 1.0
+        note = (ramp % 2.0) - 1.0
         if stereo == True:
             note = np.column_stack((note, note))
         return note
@@ -45,9 +46,9 @@ class Model:
     # Create a unit-amplitude trianle wave, stereo by default.
     def triangle_wave(self, frequency, duration, stereo=True):
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
-        t = np.linspace(0, (2 * frequency * duration), int(duration * SAMPLE_RATE), False)
+        ramp = np.linspace(0, (2 * frequency * duration), int(duration * self.sample_rate), False)
         # Generate a triangle wave
-        note = 2 * abs((t % 2.0) - 1.0) - 1.0
+        note = abs(((2 * ramp + 3 ) % 4.0) - 2) - 1
         if stereo == True:
             note = np.column_stack((note, note))
         return note
@@ -55,15 +56,30 @@ class Model:
 
     # Create a unit-amplitude square wave, stereo by default.
     def square_wave(self, frequency, duration, stereo=True):
-        # Generate inear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
-        t = np.linspace(0, (2 * frequency * duration), int(duration * SAMPLE_RATE), False)
-        # Generate a square wave
-        note = signal.square(2 * np.pi * frequency * t)
+        #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
+        # Generate inear ramp with duration*sample_rate steps, ranging between 0 and duration
+        t = np.linspace(0, duration, int(duration * self.sample_rate), False)
+        # Generate a square wave, clip sine to avoid using scipy library.
+        note = np.clip(1000 * np.sin(2 * np.pi * frequency * t), -1.0, 1.0)
+        #note = signal.square(2 * np.pi * frequency * t)
         if stereo == True:
             note = np.column_stack((note, note))
         return note
 
-
+#------------------------- Module Test Funcctions -------------------------
 if __name__ == "__main__":
+    print("Calculating test waveforms: sine1,sine2, square1, square2, sawtooth1, sawtooth2, triangle1 & triangle2.")
     model = Model(SAMPLE_RATE)
-    note = model.sine_wave(444.3, 10)
+    frequency = 200
+    duration = 1
+    # Generate mono waveforms
+    sine1 = model.sine_wave(frequency, duration, False)
+    square1 = model.square_wave(frequency, duration, False)
+    sawtooth1 = model.sawtooth_wave(frequency, duration, False)
+    triangle1 = model.triangle_wave(frequency, duration, False)
+    #Generate stereo waveforms
+    sine2 = model.sine_wave(frequency, duration)
+    square2 = model.square_wave(frequency, duration)
+    sawtooth2 = model.sawtooth_wave(frequency, duration)
+    triangle2 = model.triangle_wave(frequency, duration)
+    
