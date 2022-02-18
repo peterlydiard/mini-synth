@@ -7,11 +7,18 @@ Development stages:
 
 1. Make basic waveform generator with sine, triangle, sawtooth and square waves. (Done)
 
-2. Make envelope shaper with controllable ADSR function to control tone amplitude.
+2. Add spaced sawtooth and pulse width control of square wave. (Done)
 
-3. Make variable low-pass and high-pass filter to modify sound spectrum.
+3. Add screen keyboard.
 
-4. Add spectrum analysis and display?
+4.1 Make envelope shaper with controllable ADSR function to control tone amplitude.
+4.2 Add tremolo (amplitude wobble) to all waveforms?
+
+5. Add vibrato (frequency wobble) to all waveforms.
+
+6. Make variable low-pass and high-pass filter to modify sound spectrum.
+
+7. Add spectrum analysis and display?
 
 
 Background reading:

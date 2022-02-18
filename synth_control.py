@@ -23,6 +23,7 @@ class Controller:
     def __init__(self):
         self.waveform = "Sine"
         self.frequency = 440
+        self.width = 100
         self.view = View(self)
         self.model = Model(SAMPLE_RATE)
     
@@ -34,16 +35,26 @@ class Controller:
     def on_request_waveform(self, waveform):
         print("Set waveform requested: " + waveform)
         self.waveform = waveform
-        note = self.__change_note(self.waveform, self.frequency)    
+        note = self.__change_note(self.waveform, self.frequency, self.width)    
         if not note is None:
             self.view.play_sound(note)        
         
     def on_request_frequency(self, frequency):
         print("Set frequency to " + str(frequency))
         self.frequency = float(frequency)
-        note = self.__change_note(self.waveform, self.frequency)    
+        note = self.__change_note(self.waveform, self.frequency, self.width)    
         if not note is None:
             self.view.play_sound(note)
+            
+    def on_request_width(self, width):
+        if self.waveform == "Sawtooth" or self.waveform == "Square":
+            print("Set width to " + str(width))
+            self.width = float(width)
+            note = self.__change_note(self.waveform, self.frequency, self.width)    
+            if not note is None:
+                self.view.play_sound(note)
+        else:
+            print("Width of this waveform is fixed.")
         
     def on_request_play(self):
         print("Play Sound requested")
@@ -55,15 +66,15 @@ class Controller:
         print("Restore game requested")
         
 
-    def __change_note(self, waveform, frequency):
+    def __change_note(self, waveform, frequency, width):
         if waveform == "Sine":
             note = self.model.sine_wave(float(frequency), 3.0)
         elif waveform == "Triangle":
             note = self.model.triangle_wave(float(frequency), 3.0)
         elif waveform == "Sawtooth":
-            note = self.model.sawtooth_wave(float(frequency), 3.0)
+            note = self.model.pwm_sawtooth_wave(float(frequency), width, 3.0)
         elif waveform == "Square":
-            note = self.model.square_wave(float(frequency), 3.0)
+            note = self.model.pwm_square_wave(float(frequency), width, 3.0)
         else:
             print("Warning, waveform unknown: " + str(waveform))
             note = None

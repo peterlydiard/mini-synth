@@ -44,18 +44,29 @@ class View:
         self.box = Box(self.app)
         self.screen = Drawing(self.box, width=220, height=220)
         
-        self.panel = Box(self.app, layout="grid", border=10)
-        self.panel.set_border(thickness=10, color=self.app.bg)
-        self.waveform_button = Combo(self.panel, grid=[0,0], options=["Sine","Triangle","Sawtooth","Square"],
+        self.panel_1 = Box(self.app, layout="grid", border=10)
+        self.panel_1.set_border(thickness=10, color=self.app.bg)
+        self.waveform_button = Combo(self.panel_1, grid=[0,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self.handle_set_waveform)
 
-        #mywidth = Slider(app, start=1, end=10)
-
-        self.play_button = PushButton(self.panel, grid=[2,0], text="Play", command=self.handle_request_play)
-        #self.play_button.text_color = "grey"
+        self.play_button = PushButton(self.panel_1, grid=[1,0], text="Play", command=self.handle_request_play)
         
-        self.frequency_button = Slider(self.app, start=200, end=500,
+        self.panel_2 = Box(self.app, layout="grid", border=10)
+        self.panel_2.set_border(thickness=10, color=self.app.bg)
+        
+        freq_label = Text(self.panel_2, grid=[0,1], text="Frequency, Hz ")
+        
+        self.frequency_button = Slider(self.panel_2, grid=[1,1], start=200, end=500,
                          width=300, command=self.handle_set_frequency)
+        self.frequency_button.value = 440
+        
+        self.panel_3 = Box(self.app, layout="grid", border=10)
+        self.panel_3.set_border(thickness=10, color=self.app.bg)
+        
+        width_label = Text(self.panel_3, grid=[0,1], text="Width, % ")
+        self.width_button = Slider(self.panel_3, grid=[1,1], start=10, end=100,
+                         width=180, command=self.handle_set_width)
+        self.width_button.value = 100
         
         self.screen.rectangle(10, 10, 210, 210, color="light blue")
         
@@ -126,6 +137,9 @@ class View:
     
     def handle_set_frequency(self, value):
         self.controller.on_request_frequency(value)
+        
+    def handle_set_width(self, value):
+        self.controller.on_request_width(value)
         
     def handle_request_play(self):
         self.controller.on_request_play()
