@@ -14,18 +14,20 @@ Development stages:
 4.1 Make envelope shaper with controllable ADSR function to control tone amplitude.
 4.2 Add tremolo (amplitude wobble) to all waveforms?
 
-5. Add vibrato (frequency wobble) to all waveforms.
+5. Add vibrato (frequency wobble) to all waveforms?
 
 6. Make variable low-pass and high-pass filter to modify sound spectrum.
 
-7. White and pink noise generators, random pitch and amplitude modulation.
+7. Low frequency oscillators for modulating other parameters.
 
-8. Ring modulator, Phasing, chorus, unison, reverb.
+8. White and pink noise generators, random pitch and amplitude modulation.
 
-9. Spectrum analysis and display?
+9. Storage and recall of synth settings (patches).
 
+10. Ring modulator, phasing, chorus, unison, reverb?
+
+11. Spectrum analysis and display?
 
 Background reading:
 
-Elektor magazine "Formant" synthesiser project book. 
-See http//:Fdl.lojinx.com/Fanaloghell/FElektorFormantMusicSynthesiser.pdf
+Elektor magazine "Formant" synthesiser project book. (stored here)

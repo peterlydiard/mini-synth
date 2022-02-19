@@ -83,34 +83,16 @@ class View:
         self.width_button.value = 100
         
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
-        self.draw_keyboard()
+        self._draw_keyboard()
         # Link event handler functions to events. 
-        self.keyboard.when_mouse_dragged = self.detect_key        
-        self.keyboard.when_left_button_pressed = self.detect_key         
+        self.keyboard.when_mouse_dragged = self.handle_kb_sweep        
+        self.keyboard.when_left_button_pressed = self.handle_key_pressed         
         
         # set up exit function
-        self.app.when_closed = self.close_app
+        self.app.when_closed = self.handle_close_app
         
         # enter endless loop, waiting for user input.
         self.app.display()
-        
-    def reset_user_interface(self):
-        print("Reset user interface")
-        
-        
-    def draw_keyboard(self, num_octaves=NUM_OCTAVES):
-            self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
-
-            for i in range(NUM_WHITE_KEYS):
-                key_left = WK_X0 + KEY_X_SPACING * i
-                key_top = WK_Y0
-                self.keyboard.rectangle(key_left, key_top, key_left + WK_WIDTH, key_top + WK_HEIGHT, color = "white")
-
-            for i in range(NUM_BLACK_KEYS):
-                if (i % 7) in [0, 1, 3, 4, 5]:
-                    key_left = BK_X0 + KEY_X_SPACING * i
-                    key_top = BK_Y0
-                    self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
         
         
     def play_sound(self, wave):
@@ -127,9 +109,27 @@ class View:
         self.sound = sound
         
         self.freq_display.value = int(self.controller.frequency)
-        self.plot_sound(wave)
-        
-    def plot_sound(self, wave):
+        self._plot_sound(wave)
+
+    #---------------------- Helper Functions --------------------
+    # (intended only for use inside this module)
+    
+    def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
+            self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
+
+            for i in range(NUM_WHITE_KEYS):
+                key_left = WK_X0 + KEY_X_SPACING * i
+                key_top = WK_Y0
+                self.keyboard.rectangle(key_left, key_top, key_left + WK_WIDTH, key_top + WK_HEIGHT, color = "white")
+
+            for i in range(NUM_BLACK_KEYS):
+                if (i % 7) in [0, 1, 3, 4, 5]:
+                    key_left = BK_X0 + KEY_X_SPACING * i
+                    key_top = BK_Y0
+                    self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
+                    
+                    
+    def _plot_sound(self, wave):
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
         
@@ -148,14 +148,7 @@ class View:
             self.screen.line(previous_x, previous_y, plot_x, plot_y, color="dark blue", width=1)
             previous_x = plot_x
             previous_y = plot_y
-           
-    def close_app(self):
-        print("\nNormal termination")
-        pygame.mixer.music.stop()
-        self.app.destroy()
     
-    #################### Helper Functions ################
-        
     def _debug_1(self, message):
         # pass
         print(message)
@@ -164,7 +157,7 @@ class View:
         # pass
         print(message)
     
-    #################### Event Handlers ##################
+    #-------------------- Event Handlers --------------------
     
     def handle_set_waveform(self, value):
         self.controller.on_request_waveform(value)
@@ -186,7 +179,10 @@ class View:
     def handle_request_restore(self):
         self.controller.on_request_restore()
             
-    def detect_key(self, event):
+    def handle_kb_sweep(self, event):
+        self.handle_key_pressed(event) # Temporary workaround until ADSR is implemented.
+        
+    def handle_key_pressed(self, event):
         #print("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         
         semitone = -1 # default value for "not a key"
@@ -215,6 +211,10 @@ class View:
         else:
             print("Not a key")        
 
+    def handle_close_app(self):
+        print("\nNormal termination")
+        pygame.mixer.music.stop()
+        self.app.destroy()
 #--------------------------- end of View class ---------------------------
 
 #--------------------------- Test Functions ------------------------------
