@@ -40,7 +40,7 @@ class Controller:
             self.view.play_sound(note)        
         
     def on_request_frequency(self, frequency):
-        print("Set frequency to " + str(frequency))
+        # print("Set frequency to " + str(frequency))
         self.frequency = float(frequency)
         note = self.__change_note(self.waveform, self.frequency, self.width)    
         if not note is None:
@@ -48,7 +48,7 @@ class Controller:
             
     def on_request_width(self, width):
         if self.waveform == "Sawtooth" or self.waveform == "Square":
-            print("Set width to " + str(width))
+            #print("Set width to " + str(width))
             self.width = float(width)
             note = self.__change_note(self.waveform, self.frequency, self.width)    
             if not note is None:

@@ -15,6 +15,23 @@ import numpy as np
 
 SAMPLE_RATE = 44100
 
+white_semitones = [0, 2, 4, 5, 7, 9, 11]
+black_semitones = [1, 3, -1000, 6, 8, 10, -1000]
+NUM_OCTAVES = 3
+KEY_X_SPACING = 40
+WK_X0 = 25
+WK_Y0 = 25
+BK_X0 = 45
+BK_Y0 = 25
+WK_HEIGHT = 60
+WK_WIDTH = 30
+BK_HEIGHT = 30
+BK_WIDTH = 30
+KEYBOARD_WIDTH = (7 * NUM_OCTAVES  * KEY_X_SPACING) + WK_WIDTH + (2 * WK_X0)
+KEYBOARD_HEIGHT = WK_HEIGHT + (2 *  WK_Y0)
+NUM_WHITE_KEYS = (NUM_OCTAVES * 7) + 1
+NUM_BLACK_KEYS = (NUM_OCTAVES * 7) - 1
+
 # ------------------------------
 #  Notes:
 #  
@@ -39,7 +56,7 @@ class View:
         pygame.mixer.init()
         pygame.init()
 
-        self.app = App("Mini-synth")
+        self.app = App("Mini-synth", width = 940)
         
         self.box = Box(self.app)
         self.screen = Drawing(self.box, width=220, height=220)
@@ -52,13 +69,10 @@ class View:
         self.play_button = PushButton(self.panel_1, grid=[1,0], text="Play", command=self.handle_request_play)
         
         self.panel_2 = Box(self.app, layout="grid", border=10)
-        self.panel_2.set_border(thickness=10, color=self.app.bg)
+        self.panel_2.set_border(thickness=5, color=self.app.bg)
         
-        freq_label = Text(self.panel_2, grid=[0,1], text="Frequency, Hz ")
-        
-        self.frequency_button = Slider(self.panel_2, grid=[1,1], start=200, end=500,
-                         width=300, command=self.handle_set_frequency)
-        self.frequency_button.value = 440
+        freq_label = Text(self.panel_2, grid=[0,1], text="Frequency, Hz: ")
+        self.freq_display = Text(self.panel_2, grid=[1,1], text=str(self.controller.frequency))
         
         self.panel_3 = Box(self.app, layout="grid", border=10)
         self.panel_3.set_border(thickness=10, color=self.app.bg)
@@ -68,7 +82,11 @@ class View:
                          width=180, command=self.handle_set_width)
         self.width_button.value = 100
         
-        self.screen.rectangle(10, 10, 210, 210, color="light blue")
+        self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
+        self.draw_keyboard()
+        # Link event handler functions to events. 
+        self.keyboard.when_mouse_dragged = self.detect_key        
+        self.keyboard.when_left_button_pressed = self.detect_key         
         
         # set up exit function
         self.app.when_closed = self.close_app
@@ -78,6 +96,21 @@ class View:
         
     def reset_user_interface(self):
         print("Reset user interface")
+        
+        
+    def draw_keyboard(self, num_octaves=NUM_OCTAVES):
+            self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
+
+            for i in range(NUM_WHITE_KEYS):
+                key_left = WK_X0 + KEY_X_SPACING * i
+                key_top = WK_Y0
+                self.keyboard.rectangle(key_left, key_top, key_left + WK_WIDTH, key_top + WK_HEIGHT, color = "white")
+
+            for i in range(NUM_BLACK_KEYS):
+                if (i % 7) in [0, 1, 3, 4, 5]:
+                    key_left = BK_X0 + KEY_X_SPACING * i
+                    key_top = BK_Y0
+                    self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
         
         
     def play_sound(self, wave):
@@ -93,6 +126,7 @@ class View:
         sound.play()
         self.sound = sound
         
+        self.freq_display.value = int(self.controller.frequency)
         self.plot_sound(wave)
         
     def plot_sound(self, wave):
@@ -152,6 +186,34 @@ class View:
     def handle_request_restore(self):
         self.controller.on_request_restore()
             
+    def detect_key(self, event):
+        #print("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
+        
+        semitone = -1 # default value for "not a key"
+        
+        if event.y > BK_Y0 and event.y < BK_Y0 + BK_HEIGHT:
+            
+            if event.x > BK_X0 and (event.x - BK_X0) % KEY_X_SPACING < BK_WIDTH:
+                octave = int((event.x - WK_X0) / (7 * KEY_X_SPACING))
+                octave_origin = (7 * octave * KEY_X_SPACING) + BK_X0
+                semitone = black_semitones[int((event.x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                #if semitone >= 0:
+                #    print("Black key pressed with number = " + str(semitone))
+                      
+        elif event.y > BK_Y0 + BK_HEIGHT and event.y < BK_Y0 + WK_HEIGHT:
+            
+            if event.x > WK_X0 and (event.x - WK_X0) % KEY_X_SPACING < WK_WIDTH:
+                octave = int((event.x - WK_X0) / (7 * KEY_X_SPACING))
+                octave_origin = (7 * octave * KEY_X_SPACING) + WK_X0
+                semitone = white_semitones[int((event.x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                #if semitone >= 0:
+                #    print("White key pressed with number = " + str(semitone))
+        
+        if semitone >= 0:
+            frequency = int((110 * np.power(2, semitone/12)) + 0.5)
+            self.controller.on_request_frequency(frequency)
+        else:
+            print("Not a key")        
 
 #--------------------------- end of View class ---------------------------
 
@@ -173,6 +235,9 @@ if __name__ == "__main__":
             
         def on_request_frequency(self, frequency):
             print("Set frequency to " + str(frequency))
+            
+        def on_request_width(self, width):
+            print("Set width % to " + str(width))
             
         def on_request_play(self):
             print("Play Sound requested")

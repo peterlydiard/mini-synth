@@ -9,7 +9,7 @@ Development stages:
 
 2. Add spaced sawtooth and pulse width control of square wave. (Done)
 
-3. Add screen keyboard.
+3. Add screen keyboard. (Done)
 
 4.1 Make envelope shaper with controllable ADSR function to control tone amplitude.
 4.2 Add tremolo (amplitude wobble) to all waveforms?
@@ -18,7 +18,11 @@ Development stages:
 
 6. Make variable low-pass and high-pass filter to modify sound spectrum.
 
-7. Add spectrum analysis and display?
+7. White and pink noise generators, random pitch and amplitude modulation.
+
+8. Ring modulator, Phasing, chorus, unison, reverb.
+
+9. Spectrum analysis and display?
 
 
 Background reading:
