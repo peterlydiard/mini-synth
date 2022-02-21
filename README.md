@@ -28,6 +28,10 @@ Development stages:
 
 11. Spectrum analysis and display?
 
-Background reading:
+# Contact:
+
+https://en.wikibooks.org/wiki/User_talk:Unkle_Peter
+
+# Background reading:
 
 Elektor magazine "Formant" synthesiser project book. (stored here)
