@@ -18,6 +18,7 @@ DEFAULT_SUSTAIN = 500
 DEFAULT_SUSTAIN_LEVEL = 50
 DEFAULT_RELEASE = 200
 
+# Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 1
 # ------------------------------
 # Classes
@@ -38,7 +39,7 @@ class Controller:
         self.model = Model(SAMPLE_RATE)
        
     def main(self):
-        self._debug_1("In main of test controller")
+        self._debug_1("In main of controller")
         
         self.view.main()
 
@@ -92,7 +93,10 @@ class Controller:
         self._change_envelope()
                     
     def on_request_play(self):
-        self._debug_1("Play Sound requested")
+        self._debug_1("Play Sound requested.")
+        note = self._change_note(self.waveform, self.frequency, self.width)    
+        if not note is None:
+            self.view.play_sound(note)
               
     def on_request_save(self):
         self._debug_1("Save requested")
@@ -106,16 +110,18 @@ class Controller:
 
     def _change_note(self, waveform, frequency, width):
         if waveform == "Sine":
-            note = self.model.sine_wave(float(frequency))
+            tone = self.model.sine_wave(float(frequency))
         elif waveform == "Triangle":
-            note = self.model.triangle_wave(float(frequency))
+            tone = self.model.triangle_wave(float(frequency))
         elif waveform == "Sawtooth":
-            note = self.model.pwm_sawtooth_wave(float(frequency), width)
+            tone = self.model.pwm_sawtooth_wave(float(frequency), width)
         elif waveform == "Square":
-            note = self.model.pwm_square_wave(float(frequency), width)
+            tone = self.model.pwm_square_wave(float(frequency), width)
         else:
             self._debug_1("Warning, waveform unknown: " + str(waveform))
-            note = None
+            tone = None
+        
+        note = self.model.apply_envelope(tone)
         return note
     
     def _change_envelope(self):

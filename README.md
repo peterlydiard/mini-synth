@@ -4,7 +4,9 @@ Simple sound synthesiser using pygame and guizero
 
 Other required modules: numpy
 
-Development stages:
+## Warning
+
+If you edit the online version of this file, it may conflict with other changes in any checked-out versions.
 
 ## Development stages:
 
@@ -14,7 +16,7 @@ Development stages:
 
 3. Add screen keyboard. (Done)
 
-4 Make envelope shaper with controllable ADSR function to control tone amplitude.
+4. Make envelope shaper with controllable ADSR function to control tone amplitude. (Done)
 
 5. Make variable low-pass and high-pass filter to modify sound spectrum.
 
@@ -46,10 +48,14 @@ The variable width waveforms have DC offsets which could be a problem in filter 
 If being used as a sequencer/ pianola, how do note lengths relate to the envelope shape? Is it just the sustain
 time that varies?
 
-## Contact:
+Can the program structure be modified to make maximum use of a processor with multiple CPU cores?
 
-https://en.wikibooks.org/wiki/User_talk:Unkle_Peter
+How can performance be measured?
 
 ## Background reading:
 
 Elektor magazine "Formant" synthesiser project book. (stored here)
+
+## Contact:
+
+https://en.wikibooks.org/wiki/User_talk:Unkle_Peter

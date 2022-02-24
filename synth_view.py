@@ -42,7 +42,8 @@ MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 # ------------------------------
 # Variables
 # ------------------------------
-debug_level = 0
+# Debug levels: 0 = none, 1 = basic, 2 = long-winded.
+debug_level = 1
 # ------------------------------
 #  Notes:
 #  
@@ -59,6 +60,7 @@ class View:
     def __init__(self, controller):
         self.controller = controller
         self.sound = None
+        self.previous_key = 0
 
     def main(self):
         self._debug_1("In view.main()")
@@ -72,7 +74,7 @@ class View:
         self.panel_0 = Box(self.app, layout="grid")
         self.shaper_panel = Box(self.panel_0, layout="grid", grid=[0,0])
         self._shaper_controls()
-        self.screen = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
+        self.scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
         
         self.panel_1 = Box(self.app, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
@@ -98,7 +100,7 @@ class View:
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
         # Link event handler functions to events. 
-        self.keyboard.when_mouse_dragged = self.handle_kb_sweep        
+        self.keyboard.when_mouse_dragged = self.handle_mouse_dragged        
         self.keyboard.when_left_button_pressed = self.handle_key_pressed         
         
         # set up exit function
@@ -127,25 +129,25 @@ class View:
     
     def show_envelope(self, envelope):
         self._debug_2("New envelope available")
-        self.screen.clear()
-        self.screen.bg = "dark gray"
+        self.scope.clear()
+        self.scope.bg = "dark gray"
             
         # Plot signal to display
         origin_x = 0
-        origin_y = self.screen.height
+        origin_y = self.scope.height
         previous_x = origin_x
         previous_y = origin_y        
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
-        sub_sampling_factor = int(self.controller.sample_rate * 5 / self.screen.width)
-        scale_x = (self.screen.width - 5) * sub_sampling_factor / num_points
-        scale_y = (self.screen.height - 5)
+        sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
+        scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
+        scale_y = (self.scope.height - 5)
         self._debug_2("scale_y = " + str(scale_y))
         for i in range(num_points // sub_sampling_factor):
             #self._debug_2(envelope[int(i * sub_sampling_factor)])
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
             plot_y = int(origin_y - (scale_y * envelope[int(i * sub_sampling_factor)]))
             plot_x = int(origin_x + (scale_x * i))
-            self.screen.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
+            self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
             previous_y = plot_y
             
@@ -198,8 +200,8 @@ class View:
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
         
-        self.screen.clear()
-        self.screen.bg = "dark gray"
+        self.scope.clear()
+        self.scope.bg = "dark gray"
 
         # Find the part of the waveform with the strongest signal
         samples_per_cycle = int(self.controller.sample_rate / self.controller.frequency)
@@ -217,22 +219,22 @@ class View:
             if abs(current_level) < min_level:
                 min_level = abs(current_level)
                 possible_offset = i
-        # self._debug_2("Starting plot at sample = " + str(x_offset))
+        self._debug_2("Starting plot at sample = " + str(x_offset))
         
         # Plot signal to display
         origin_x = 0
-        origin_y = int(self.screen.height / 2)
+        origin_y = int(self.scope.height / 2)
         previous_x = origin_x
         previous_y = origin_y        
-        num_points = min(500, len(left_channel))
+        num_points = min(800, len(left_channel))
         #num_points = len(left_channel)
-        scale_x = (self.screen.width - 5)/ num_points
-        scale_y = (self.screen.height - 5)/ 2.0
+        scale_x = (self.scope.width - 5)/ num_points
+        scale_y = (self.scope.height - 5)/ 2.0
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
             plot_y = int(origin_y - (scale_y * left_channel[i + x_offset]))
             plot_x = int(origin_x + (scale_x * i))
-            self.screen.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
+            self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
             previous_y = plot_y
     
@@ -246,6 +248,28 @@ class View:
         if debug_level >= 2:
             print(message)
     
+    def _identify_key_number(self, x, y):
+        semitone = -1 # default value for "not a key"
+        
+        if y > BK_Y0 and y < BK_Y0 + BK_HEIGHT:
+            
+            if x > BK_X0 and (x - BK_X0) % KEY_X_SPACING < BK_WIDTH:
+                octave = int((x - WK_X0) / (7 * KEY_X_SPACING))
+                octave_origin = (7 * octave * KEY_X_SPACING) + BK_X0
+                semitone = black_semitones[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                if semitone >= 0:
+                    self._debug_2("Black key pressed with number = " + str(semitone))
+                      
+        elif y > BK_Y0 + BK_HEIGHT and y < BK_Y0 + WK_HEIGHT:
+            
+            if x > WK_X0 and (x - WK_X0) % KEY_X_SPACING < WK_WIDTH:
+                octave = int((x - WK_X0) / (7 * KEY_X_SPACING))
+                octave_origin = (7 * octave * KEY_X_SPACING) + WK_X0
+                semitone = white_semitones[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                if semitone >= 0:
+                    self._debug_2("White key pressed with number = " + str(semitone))
+        return semitone
+        
     #-------------------- Event Handlers --------------------
     
     def handle_set_waveform(self, value):
@@ -274,8 +298,6 @@ class View:
         
     def handle_request_play(self):
         self.controller.on_request_play()
-        if not self.sound is None:
-            self.sound.play()
         
     def handle_request_save(self):
         self.controller.on_request_save()
@@ -283,32 +305,19 @@ class View:
     def handle_request_restore(self):
         self.controller.on_request_restore()
             
-    def handle_kb_sweep(self, event):
-        self.handle_key_pressed(event) # Temporary workaround until ADSR is implemented.
+    def handle_mouse_dragged(self, event):
+        self._debug_2("Mouse (pointer) deragged event at: (" + str(event.x) + ", " + str(event.y) + ")")
+        semitone = self._identify_key_number(event.x, event.y)
+        if semitone >= 0 and semitone != self.previous_key:
+            frequency = int((110 * np.power(2, semitone/12)) + 0.5)
+            self.controller.on_request_frequency(frequency)
+            self.previous_key = semitone
+        else:
+            self._debug_2("Not a key")        
         
     def handle_key_pressed(self, event):
-        #self.debug2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
-        
-        semitone = -1 # default value for "not a key"
-        
-        if event.y > BK_Y0 and event.y < BK_Y0 + BK_HEIGHT:
-            
-            if event.x > BK_X0 and (event.x - BK_X0) % KEY_X_SPACING < BK_WIDTH:
-                octave = int((event.x - WK_X0) / (7 * KEY_X_SPACING))
-                octave_origin = (7 * octave * KEY_X_SPACING) + BK_X0
-                semitone = black_semitones[int((event.x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
-                #if semitone >= 0:
-                #    self._debug_2("Black key pressed with number = " + str(semitone))
-                      
-        elif event.y > BK_Y0 + BK_HEIGHT and event.y < BK_Y0 + WK_HEIGHT:
-            
-            if event.x > WK_X0 and (event.x - WK_X0) % KEY_X_SPACING < WK_WIDTH:
-                octave = int((event.x - WK_X0) / (7 * KEY_X_SPACING))
-                octave_origin = (7 * octave * KEY_X_SPACING) + WK_X0
-                semitone = white_semitones[int((event.x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
-                #if semitone >= 0:
-                #    self._debug_2("White key pressed with number = " + str(semitone))
-        
+        self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
+        semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             frequency = int((110 * np.power(2, semitone/12)) + 0.5)
             self.controller.on_request_frequency(frequency)
@@ -316,7 +325,7 @@ class View:
             self._debug_2("Not a key")        
 
     def handle_close_app(self):
-        self._debug_2("\nNormal termination")
+        self._debug_1("\nNormal termination")
         pygame.mixer.music.stop()
         self.app.destroy()
 #--------------------------- end of View class ---------------------------
