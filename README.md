@@ -36,6 +36,9 @@ If you edit the online version of this file, it may conflict with other changes 
 
 ## Notes
 
+The Elektor Formant uses exponential amplitude control in its Voltage Controlled Amplifier for the main envelope
+and linear modulation for tremolo effects.
+
 Tremolo effect may be produced in waveform generation functions by adding periodic time offsets to the
 sample times arrays.
 
