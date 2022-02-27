@@ -61,19 +61,27 @@ class View:
         self.scope.bg = "dark gray"
             
         # Plot signal to display
+        min_y = np.nanmin(graph)
+        max_y = np.nanmax(graph)
+        range_y = max_y - min_y
+        midlevel_y = (min_y + max_y) / 2.0
+        print("Graph min, max = " + str(min_y) + ", " + str(max_y))
         origin_x = 0
         origin_y = self.scope.height / 2
-        previous_x = origin_x
-        previous_y = origin_y        
+      
         num_points = len(graph)
-        sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
+        
+        sub_sampling_factor = 1 if num_points <= self.scope.width else int(num_points / self.scope.width)
+        print("Graph sub-sampling factor = " + str(sub_sampling_factor))
         scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
-        scale_y = (self.scope.height - 5) / 2
+        scale_y = (self.scope.height - 5) / (range_y)
         self._debug_2("scale_y = " + str(scale_y))
+        previous_x = origin_x
+        previous_y = int(origin_y - (scale_y * (graph[0] - midlevel_y)))
         for i in range(num_points // sub_sampling_factor):
             #self._debug_2(envelope[int(i * sub_sampling_factor)])
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * graph[int(i * sub_sampling_factor)]))
+            plot_y = int(origin_y - (scale_y * (graph[int(i * sub_sampling_factor)] - midlevel_y)))
             plot_x = int(origin_x + (scale_x * i))
             self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
@@ -133,7 +141,7 @@ class Model:
         notch = np.zeros(len(tone) + 2)
         
         for i in range(len(tone)):
-            low_pass[i+1] = low_pass[i] - (0.05 * control[i] * tone[i])
+            low_pass[i+1] = ((1.0 - control[i]) * low_pass[i]) - (control[i] * tone[i])
             
         return low_pass[2:]
 
@@ -154,7 +162,7 @@ if __name__ == "__main__":
     import time
 
     SAMPLE_RATE = 44100
-    DURATION = 1000
+    DURATION = 100
     FERQUENCY = 55
     
     class TestController:
@@ -163,7 +171,7 @@ if __name__ == "__main__":
             self.waveform = "Sine"
             self.frequency = 55
             self.view = View(self)
-            self.model = Model(SAMPLE_RATE)
+            self.model = Model(SAMPLE_RATE, max_duration=DURATION)
         
         def main(self):
             self.view._debug_2("In main of test controller")
@@ -174,21 +182,58 @@ if __name__ == "__main__":
                       
         def on_request_test(self):
             self.view._debug_2("Test requested")
+            
+            num_tones = 94
+            gain = np.zeros(num_tones)
                  
-            sine_tone = self.model.sine_wave(FREQUENCY)
-    
-            control = np.ones(len(sine_tone))
+            cutoff_freq = 0
+            cutoff_gain = 1.0
             
-            output =  self.model.voltage_controlled_filters(sine_tone, control)
-            
-            for i in range(100):
-                print(i, " ", sine_tone[i])
-                    
-            for i in range(100):
-                print(i, " ", output[i])
+            for semitone in range(num_tones):
+                frequency = int((110 * np.power(2, semitone/12)) + 0.5)
                 
-            self.view.show_graph(sine_tone)
-                  
+                #frequency = 18350 + semitone
+                
+                sine_tone = self.model.sine_wave(frequency)
+            
+                # Fade in test signal over 10 milliseconds to avoid transients
+                fade_in = min(SAMPLE_RATE // 100, len(sine_tone) // 4)
+                for i in range(fade_in):
+                    sine_tone[i] = (i / fade_in) * sine_tone[i]
+            
+                #print("Sine wave, number of samples = ", len(sine_tone))
+    
+                control = np.ones(len(sine_tone)) * 0.82
+            
+                output =  self.model.voltage_controlled_filters(sine_tone, control)
+            
+                output_range = range_y = np.nanmax(output) - np.nanmin(output)
+                
+                if output_range > 0.8 and output_range < 1.414:
+                    print("3dB cutoff at " + str(frequency))
+                    if cutoff_freq == 0:
+                        cutoff_freq = frequency
+                        cutoff_gain = output_range / 2
+                
+                gain[semitone] = 20 * math.log10(output_range / 2)
+                
+            self.view.show_graph(gain)
+            
+            print("3dB cutoff at freq, gain = " + str(cutoff_freq) + ", " + str(cutoff_gain))
+            
+            op_max = np.nanmin(output)
+            op_min = np.nanmax(output)
+            
+            op_max_sign = 1 if op_max >= 0 else -1
+            op_min_sign = 1 if op_min >= 0 else -1
+            
+            upper_bound = 10 ** (int(math.log10(abs(op_max))) + 1)
+                        
+            lower_bound = 0 if op_min == 0 else 10 ** int(math.log10(abs(op_min)))
+            
+            #print("Output bounds: lower, upper = " + str(lower_bound) + ", " + str(upper_bound))
+            #print("Signs = " + str(op_max_sign) + ", " + str(op_min_sign))
+            
         def on_request_save(self):
             self.view._debug_2("Save settings requested")
             
@@ -201,19 +246,6 @@ if __name__ == "__main__":
     tc = TestController()
     tc.main()
 
-    print("Calculating test waveforms: sine_tone, triangle_tone, sawtooth_tone, square_tone.")
- 
-    # Generate mono waveforms
-    
-    start = time.perf_counter()
-    
-    tc.model.duration = DURATION
-
-    sine_tone = tc.model.sine_wave(FREQUENCY)
-
-    finish = time.perf_counter()
-    print("No of samples / tone = " +str(len(sine_tone)))
-    print("Calculation of 1 tones in seconds = " + str(finish - start))
     
         
 
