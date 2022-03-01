@@ -42,7 +42,7 @@ class Model:
         self.envelope = np.zeros((int(sample_rate * MAX_DURATION / 1000)), dtype=float)
 
 
-    # Create a unit-amplitude sine wave, stereo by default.
+    # Create a unit-amplitude sine wave.
     def sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
         self.frequency = frequency
@@ -55,7 +55,7 @@ class Model:
         return tone
 
 
-    # Create a unit-amplitude trianle wave, stereo by default.
+    # Create a unit-amplitude trianle wave.
     def triangle_wave(self, frequency):
         self.frequency = frequency   
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
@@ -65,7 +65,7 @@ class Model:
         return tone
 
     
-    # Create a unit-amplitude sawtooth wave with pulse width control, stereo by default.
+    # Create a unit-amplitude sawtooth wave with pulse width control.
     def pwm_sawtooth_wave(self, frequency, width):
         #print("Saw wave freq, width, duration = " + str(frequency) + ", " + str(width)+ ", " + str(duration))
         self.frequency = frequency
@@ -78,7 +78,7 @@ class Model:
         return tone
     
     
-    # Create a unit-amplitude square wave with pulse width control, stereo by default.
+    # Create a unit-amplitude square wave with pulse width control.
     def pwm_square_wave(self, frequency, width):
         #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
         self.frequency = frequency

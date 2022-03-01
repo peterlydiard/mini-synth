@@ -41,10 +41,10 @@ class View:
         self._debug_1("In view.main()")
         
         # initialise stereo mixer (default)
-        pygame.mixer.init()
+        pygame.mixer.init(channels=1)
         pygame.init()
 
-        self.app = App("Mini-synth", height = 700, width = 940)
+        self.app = App("Filter Test", height = 700, width = 940)
         
         self.panel_0 = Box(self.app, layout="grid")
 
@@ -70,9 +70,6 @@ class View:
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
-        
-        self.scope.clear()
-        self.scope.bg = "dark gray"
         
         self.origin_x = GRAPH_MARGIN
         self.origin_y = self.scope.height - GRAPH_MARGIN
@@ -104,12 +101,13 @@ class View:
             self._debug_1("WARNING: Graph value off screen, y2 = " + str(y2))
             
         self.scope.line(plot_x1, plot_y1, plot_x2, plot_y2, color=colour, width=width)
-        
-    def draw_graph(self, graph):
+
+    def prepare_graph(self):
         self._debug_2("New graph available")
         self.scope.clear()
         self.scope.bg = "dark gray"
-            
+                    
+    def draw_graph(self, graph, line_colour="light green"):
         min_y = -60.0
         max_y = 10.0
         range_y = max_y - min_y
@@ -124,7 +122,7 @@ class View:
         self.scale_x = (self.scope.width - GRAPH_MARGIN) * sub_sampling_factor / num_points
         self.scale_y = (self.scope.height - GRAPH_MARGIN) / (range_y)
         
-        step_x = num_points // 10
+        step_x = 12 // sub_sampling_factor
         step_y = 10
         
         self.draw_grid(0, num_points, step_x, min_y, max_y, step_y)
@@ -134,7 +132,7 @@ class View:
         for i in range(num_points // sub_sampling_factor):
             plot_y = graph[int(i * sub_sampling_factor)] 
             plot_x = i * sub_sampling_factor
-            self.draw_scope_line(previous_x, previous_y, plot_x, plot_y, colour="light green", width=2)
+            self.draw_scope_line(previous_x, previous_y, plot_x, plot_y, colour=line_colour, width=2)
             previous_x = plot_x
             previous_y = plot_y
         
@@ -171,7 +169,7 @@ class Model:
         self.max_duration = max_duration   # milliseconds
 
 
-    # Create a unit-amplitude sine wave, stereo by default.
+    # Create a unit-amplitude sine wave.
     def sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
         self.frequency = frequency
@@ -189,16 +187,45 @@ class Model:
         # Truncate raw tone to length of control waveform
         tone = tone[:len(control)]
         
-        # Clear integrator stores for HP, BP and LP outputs.
+        #self._debug_2("VCF signal length = " + str(len(tone)))
+        
+        # Clear stores for HP and LP outputs.
         high_pass = np.zeros(len(tone) + 2)
-        band_pass = np.zeros(len(tone) + 2)
         low_pass = np.zeros(len(tone) + 2)
-        notch = np.zeros(len(tone) + 2)
+        x0 = x1 = x2 = x3 = x4 = 0
         
         for i in range(len(tone)):
-            low_pass[i+1] = ((1.0 - control[i]) * low_pass[i]) - (control[i] * tone[i])
             
-        return low_pass[2:]
+            x0 = (control[i] * tone[i]) + ((1.0 - control[i]) * x1) 
+            x2 = (control[i] * x1) + ((1.0 - control[i]) * x3)
+            
+            low_pass[i] = x3
+            high_pass[i] = tone[i] - x3
+            
+            x3 = x2
+            x1 = x0
+        
+        band_pass = np.zeros(len(tone) + 2)
+        notch = np.zeros(len(tone) + 2)
+        x0 = x1 = x2 = x3 = x4 = 0
+        
+        fc = 220
+        Rn = 0.975
+        R = 1 - ((1 - Rn) *  fc * 64 / SAMPLE_RATE)
+        b2 = - R
+        a1 = - 2 * R * np.cos(2 * np.pi * fc / SAMPLE_RATE)
+        a2 = R * R
+        # self._debug_2("BP filter a1, a2 = " + str(a1) + ", " + str(a2))
+
+        rescale = 1 - R
+        for i in range(len(tone)):
+            x0 = tone[i] - (a1 * x1) - (a2 * x2)
+            band_pass[i] = rescale * (x0 + (b2 * x2))
+            
+            x2 = x1
+            x1 = x0
+        
+        return low_pass[2:], band_pass[2:], high_pass[2:]
 
     def _debug_1(self, message):
         global debug_level
@@ -217,7 +244,7 @@ if __name__ == "__main__":
     import time
 
     SAMPLE_RATE = 44100
-    DURATION = 100
+    DURATION = 200
     FREQUENCY = 55
     
     class TestController:
@@ -244,8 +271,9 @@ if __name__ == "__main__":
             self.view._debug_2("Test requested")
             
             num_tones = 94
-            gain = np.zeros(num_tones)
-                 
+            lp_gain = np.zeros(num_tones)
+            bp_gain = np.zeros(num_tones)
+            hp_gain = np.zeros(num_tones)
             cutoff_freq = 0
             cutoff_gain = 1.0
             
@@ -264,30 +292,51 @@ if __name__ == "__main__":
             
                 #print("Sine wave, number of samples = ", len(sine_tone))
     
-                control = np.ones(len(sine_tone)) * 0.5
+                control = np.ones(len(sine_tone)) * 0.2
             
-                output =  self.model.voltage_controlled_filters(sine_tone, control)
+                lp, bp, hp =  self.model.voltage_controlled_filters(sine_tone, control)
             
-                output_range = np.nanmax(output) - np.nanmin(output)
+                lp_range = np.nanmax(lp) - np.nanmin(lp)
+                bp_range = np.nanmax(bp) - np.nanmin(bp)
+                hp_range = np.nanmax(hp) - np.nanmin(hp)
                 
-                if output_range > 0.8 and output_range < 1.414:
+                if lp_range <= 0:
+                    print("WARNING: semitone, lp_range = " + str(semitone) + ", " + str(lp_range))
+                if bp_range <= 0:
+                    print("WARNING: semitone, bp_range = " + str(semitone) + ", " + str(bp_range))
+                if hp_range <= 0:
+                    print("WARNING: semitone, hp_range = " + str(semitone) + ", " + str(hp_range))
+                    
+                    
+                if lp_range > 0.8 and lp_range < 1.414:
                     print("3dB cutoff at " + str(frequency))
                     if cutoff_freq == 0:
                         cutoff_freq = frequency
-                        cutoff_gain = output_range / 2
+                        cutoff_gain = lp_range / 2
                 
                 # Convert filter gain to decibels
-                gain[semitone] = 20 * math.log10(output_range / 2)
+                lp_gain[semitone] = 20 * math.log10(lp_range / 2)
+                bp_gain[semitone] = 20 * math.log10(bp_range / 2)
+                hp_gain[semitone] = 20 * math.log10(hp_range / 2)
+                
+                audio = lp * 30000
+                audio = audio.astype(np.int16)
+                # create a pygame Sound object and play it.
+                sound = pygame.sndarray.make_sound(audio)
+                sound.play()
                 
             #self.view.show_graph(gain)
-            self.view.draw_graph(gain)
+            self.view.prepare_graph()
+            self.view.draw_graph(lp_gain, "light green")
+            self.view.draw_graph(bp_gain, "orange")
+            self.view.draw_graph(hp_gain, "red")
             
-            print("Graph minimum = " + str(np.nanmin(gain)))
-            print("Graph maximum = " + str(np.nanmax(gain)))
+            print("Lowpass graph minimum = " + str(np.nanmin(lp_gain)))
+            print("Lowpass graph maximum = " + str(np.nanmax(lp_gain)))
             print("3dB cutoff at freq, gain = " + str(cutoff_freq) + ", " + str(cutoff_gain))
             
-            op_max = np.nanmin(output)
-            op_min = np.nanmax(output)
+            op_max = np.nanmin(lp_gain)
+            op_min = np.nanmax(lp_gain)
             
             op_max_sign = 1 if op_max >= 0 else -1
             op_min_sign = 1 if op_min >= 0 else -1
