@@ -308,12 +308,13 @@ class View:
     def handle_mouse_dragged(self, event):
         self._debug_2("Mouse (pointer) deragged event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
-        if semitone >= 0 and semitone != self.previous_key:
-            frequency = int((110 * np.power(2, semitone/12)) + 0.5)
-            self.controller.on_request_frequency(frequency)
-            self.previous_key = semitone
+        if semitone >= 0:
+            if semitone != self.previous_key:
+                frequency = int((110 * np.power(2, semitone/12)) + 0.5)
+                self.controller.on_request_frequency(frequency)
         else:
-            self._debug_2("Not a key")        
+            self._debug_2("Not a key")
+        self.previous_key = semitone
         
     def handle_key_pressed(self, event):
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
