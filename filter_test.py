@@ -208,7 +208,9 @@ class Model:
     # tone = input waveform to be filtered
     # freq_control = control signal to set filter centre frequency for bandpass and notch filters, or
     # cutoff frequency for lowpass and highpass filters. Range = 0 to about 7.5, with one octave per unit
-    # starting with 0 -> lowest keyboard tone and 
+    # starting with 0 -> lowest keyboard tone (110 Hz) and 7.5833 -> 19912Hz (90 semitones higher).
+    # the centre freqs are set quite accurately, the cutoff freqs not so much.
+    # q_factor = ratio of filter centre frequency divided by 3dB bandwidth (approximately).
     def voltage_controlled_filters(self, tone, freq_control, q_factor):
         
         # Truncate raw tone to length of control waveform
