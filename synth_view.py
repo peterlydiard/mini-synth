@@ -7,6 +7,7 @@ import pygame
 import pygame.mixer
 import pygame.sndarray
 import numpy as np
+import time
 
 ######################### Global constants #########################
 
@@ -61,6 +62,7 @@ class View:
         self.controller = controller
         self.sound = None
         self.previous_key = 0
+        self.update_display = True
 
     def main(self):
         self._debug_1("In view.main()")
@@ -82,6 +84,8 @@ class View:
                                      height="fill", command=self.handle_set_waveform)
 
         self.play_button = PushButton(self.panel_1, grid=[1,0], text="Play", command=self.handle_request_play)
+
+        self.sequence_button = PushButton(self.panel_1, grid=[2,0], text="Sequence", command=self.handle_request_sequence)
         
         self.panel_2 = Box(self.app, layout="grid", border=10)
         self.panel_2.set_border(thickness=5, color=self.app.bg)
@@ -115,7 +119,12 @@ class View:
             self.sound.fadeout(500)
             del self.sound
         # Ensure that highest value is in 16-bit range
-        audio = wave * (2**15 - 1) / np.max(np.abs(wave))
+        max_level = np.max(np.abs(wave))
+        if max_level == 0:
+            self._debug_1("ERROR: zero waveform in play_sound().")
+            return -1
+        
+        audio = wave * (2**15 - 1) / max_level
         # Convert to 16-bit data
         audio = audio.astype(np.int16)
         # create a pygame Sound object and play it.
@@ -123,8 +132,11 @@ class View:
         sound.play()
         self.sound = sound
         
-        self.freq_display.value = int(self.controller.frequency)
-        self._plot_sound(wave)
+        if self.update_display == True:
+            self.freq_display.value = int(self.controller.frequency)
+            self._plot_sound(wave)
+        
+        return 0
     
     
     def show_envelope(self, envelope):
@@ -299,6 +311,24 @@ class View:
     def handle_request_play(self):
         self.controller.on_request_play()
         
+    def handle_request_sequence(self):
+        global debug_level
+        old_debug = debug_level
+        debug_level = 2
+        self.update_display = False
+        self._debug_2("\nDoing 40 note sequence")
+        start = time.perf_counter()
+        note = 0
+        while note < 40:
+            frequency = int((110 * np.power(2, note/12)) + 0.5)
+            self.controller.on_request_frequency(frequency)
+            time.sleep(0.050)
+            note += 1
+        finish = time.perf_counter()
+        self._debug_2("40 notes in seconds = " + str(finish - start))
+        debug_level = old_debug
+        self.update_display = True
+    
     def handle_request_save(self):
         self.controller.on_request_save()
         

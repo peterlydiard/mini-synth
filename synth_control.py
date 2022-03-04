@@ -41,6 +41,7 @@ class Controller:
     def main(self):
         self._debug_1("In main of controller")
         
+        self.model.main()
         self.view.main()
 
     def on_request_waveform(self, waveform):
@@ -56,7 +57,7 @@ class Controller:
         note = self._change_note(self.waveform, self.frequency, self.width)    
         if not note is None:
             self.view.play_sound(note)
-            
+                       
     def on_request_width(self, width):
         if self.waveform == "Sawtooth" or self.waveform == "Square":
             self._debug_2("Set width to " + str(width))

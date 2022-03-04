@@ -14,12 +14,15 @@ import numpy as np
 FREQUENCY = 220    # Hz
 WIDTH = 50
 MAX_DURATION = 1000
-STEREO = True
+STEREO = False
 ATTACK = 200
 DECAY = 200
 SUSTAIN_TIME = 500
 SUSTAIN_LEVEL = 50
 RELEASE = 100
+NUM_OCTAVES = 3
+NUM_KEYS = (12 * NUM_OCTAVES) + 1
+
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 1
 
@@ -42,6 +45,9 @@ class Model:
         self.envelope = np.zeros((int(sample_rate * MAX_DURATION / 1000)), dtype=float)
 
 
+    def main(self):
+        pass
+        
     # Create a unit-amplitude sine wave.
     def sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
@@ -163,7 +169,6 @@ class Model:
              
         return self.envelope
 
-
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
@@ -237,5 +242,7 @@ if __name__ == "__main__":
     
     finish = time.perf_counter()
     
-    print("Modulation in mono and stereo in seconds = " + str(finish - start))        
+    print("Modulation in mono and stereo in seconds = " + str(finish - start))
+    
+    
     
