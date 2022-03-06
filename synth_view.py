@@ -18,6 +18,7 @@ SAMPLE_RATE = 44100
 white_semitones = [0, 2, 4, 5, 7, 9, 11]
 black_semitones = [1, 3, -1000, 6, 8, 10, -1000]
 NUM_OCTAVES = 3
+LOWEST_TONE = 110
 KEY_X_SPACING = 40
 WK_X0 = 25
 WK_Y0 = 25
@@ -31,6 +32,7 @@ KEYBOARD_WIDTH = (7 * NUM_OCTAVES  * KEY_X_SPACING) + WK_WIDTH + (2 * WK_X0)
 KEYBOARD_HEIGHT = WK_HEIGHT + (2 *  WK_Y0)
 NUM_WHITE_KEYS = (NUM_OCTAVES * 7) + 1
 NUM_BLACK_KEYS = (NUM_OCTAVES * 7) - 1
+NUM_KEYS = (12 * NUM_OCTAVES) + 1
 
 # ADSR shaper constants (times in milli-second units)
 
@@ -116,8 +118,8 @@ class View:
         
     def play_sound(self, wave):
         if not self.sound is None:
-            self.sound.fadeout(500)
-            del self.sound
+            #self.sound.fadeout(500)
+            self.sound = None
         # Ensure that highest value is in 16-bit range
         max_level = np.max(np.abs(wave))
         if max_level == 0:
@@ -131,6 +133,8 @@ class View:
         sound = pygame.sndarray.make_sound(audio)
         sound.play()
         self.sound = sound
+        now = time.perf_counter()
+        self._debug_1("Played note at counter = " + str(now))
         
         if self.update_display == True:
             self.freq_display.value = int(self.controller.frequency)
@@ -316,16 +320,23 @@ class View:
         old_debug = debug_level
         debug_level = 2
         self.update_display = False
-        self._debug_2("\nDoing 40 note sequence")
+        self._debug_2("\nDoing 100 note sequence")
         start = time.perf_counter()
+        next_time = start + 0.1
+        voice = 0
         note = 0
-        while note < 40:
-            frequency = int((110 * np.power(2, note/12)) + 0.5)
-            self.controller.on_request_frequency(frequency)
-            time.sleep(0.050)
-            note += 1
+        while voice < 4:
+            while note < 25:
+                self.controller.on_request_note(voice, note % NUM_KEYS)
+                #now = time.perf_counter()
+                #time.sleep(next_time - now)
+                time.sleep(0.1)
+                next_time += 0.1
+                note += 1
+            voice += 1
+            note = 0
         finish = time.perf_counter()
-        self._debug_2("40 notes in seconds = " + str(finish - start))
+        self._debug_2("100 notes in seconds = " + str(finish - start))
         debug_level = old_debug
         self.update_display = True
     
@@ -340,7 +351,7 @@ class View:
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
-                frequency = int((110 * np.power(2, semitone/12)) + 0.5)
+                frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
                 self.controller.on_request_frequency(frequency)
         else:
             self._debug_2("Not a key")
@@ -350,7 +361,7 @@ class View:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
-            frequency = int((110 * np.power(2, semitone/12)) + 0.5)
+            frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
             self.controller.on_request_frequency(frequency)
         else:
             self._debug_2("Not a key")        

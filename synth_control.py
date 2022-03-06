@@ -51,6 +51,13 @@ class Controller:
         if not note is None:
             self.view.play_sound(note)        
         
+    def on_request_note(self, voice, key):
+        self._debug_1("Getting note for voice, key " + str(voice) + ", " + str(key))
+        tone = self.model.fetch_tone(voice, key)
+        note = self.model.apply_envelope(tone)   
+        if not note is None:
+            self.view.play_sound(note)
+            
     def on_request_frequency(self, frequency):
         self._debug_2("Set frequency to " + str(frequency))
         self.frequency = float(frequency)

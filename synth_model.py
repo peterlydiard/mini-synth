@@ -11,6 +11,7 @@ import numpy as np
 
 ######################### Global variables #########################
 
+LOWEST_TONE = 110
 FREQUENCY = 220    # Hz
 WIDTH = 50
 MAX_DURATION = 1000
@@ -22,6 +23,7 @@ SUSTAIN_LEVEL = 50
 RELEASE = 100
 NUM_OCTAVES = 3
 NUM_KEYS = (12 * NUM_OCTAVES) + 1
+MAX_VOICES = 4
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 1
@@ -33,6 +35,7 @@ class Model:
                  attack=ATTACK, decay=DECAY, sustain_time=SUSTAIN_TIME, sustain_level=SUSTAIN_LEVEL, release=RELEASE):
         self.sample_rate = sample_rate     # Hz
         self.frequency = frequency         # Hz
+        self.waveform = "Sine"
         self.width = width                 # range is 0..100
         self.max_duration = max_duration   # milliseconds
         self.duration = duration           # milliseconds
@@ -43,9 +46,18 @@ class Model:
         self.sustain_level = sustain_level # range is 0..100
         self.release = release             # milliseconds
         self.envelope = np.zeros((int(sample_rate * MAX_DURATION / 1000)), dtype=float)
+        self.voices = np.zeros((MAX_VOICES, NUM_KEYS, (int(sample_rate * MAX_DURATION / 1000))), dtype=float)
 
 
     def main(self):
+        self.waveform = "Sine"
+        self.make_voice(0)
+        self.waveform = "Triangle"
+        self.make_voice(1)
+        self.waveform = "Sawtooth"
+        self.make_voice(2)
+        self.waveform = "Square"
+        self.make_voice(3)        
         pass
         
     # Create a unit-amplitude sine wave.
@@ -168,7 +180,36 @@ class Model:
              self.envelope[i] = 0
              
         return self.envelope
-
+    
+    
+    def make_voice(self, voice):
+        if voice >= MAX_VOICES:
+            self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice))
+            return
+        for semitone in range(NUM_KEYS):
+            frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+            waveform = self.waveform
+            if waveform == "Sine":
+                self.voices[voice, semitone] = self.sine_wave(frequency)
+            elif waveform == "Triangle":
+                self.voices[voice, semitone] = self.triangle_wave(frequency)
+            elif waveform == "Sawtooth":
+                self.voices[voice, semitone] = self.pwm_sawtooth_wave(frequency, self.width)
+            elif waveform == "Square":
+                self.voices[voice, semitone] = self.pwm_square_wave(frequency, self.width)
+            else:
+                self._debug_1("ERROR: invalid waveform in make_voice() = " + str(waveform))
+                
+    def fetch_tone(self, voice, semitone):
+        if voice >= MAX_VOICES:
+            self._debug_1("ERROR: invalid voice number in fetch_tone() = " + str(voice))
+            return None
+        if semitone >= NUM_KEYS:
+            self._debug_1("ERROR: invalid semitone number in fetch_tone() = " + str(semitone))
+            return None
+        tone = self.voices[voice, semitone]
+        return tone        
+                
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
@@ -244,5 +285,10 @@ if __name__ == "__main__":
     
     print("Modulation in mono and stereo in seconds = " + str(finish - start))
     
+    print("\nDoing make_voice()")
     
+    start = time.perf_counter()    
+    model.make_voice(0)
+    finish = time.perf_counter()
     
+    print("Make 1 voice in seconds = " + str(finish - start))
