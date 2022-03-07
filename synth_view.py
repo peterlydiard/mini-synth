@@ -47,6 +47,7 @@ MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 1
+last_output_time = 0
 # ------------------------------
 #  Notes:
 #  
@@ -117,9 +118,11 @@ class View:
         
         
     def play_sound(self, wave):
+        global last_output_time
+        
         if not self.sound is None:
-            #self.sound.fadeout(500)
-            self.sound = None
+            self.sound.fadeout(200)
+            #self.sound = None
         # Ensure that highest value is in 16-bit range
         max_level = np.max(np.abs(wave))
         if max_level == 0:
@@ -134,7 +137,8 @@ class View:
         sound.play()
         self.sound = sound
         now = time.perf_counter()
-        self._debug_1("Played note at counter = " + str(now))
+        self._debug_2("Time since last note = " + str(now-last_output_time))
+        last_output_time = now
         
         if self.update_display == True:
             self.freq_display.value = int(self.controller.frequency)
@@ -154,7 +158,8 @@ class View:
         previous_x = origin_x
         previous_y = origin_y        
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
-        sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
+        sub_sampling_factor = 9
+        #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
         scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
         scale_y = (self.scope.height - 5)
         self._debug_2("scale_y = " + str(scale_y))
@@ -219,36 +224,24 @@ class View:
         self.scope.clear()
         self.scope.bg = "dark gray"
 
-        # Find the part of the waveform with the strongest signal
-        samples_per_cycle = int(self.controller.sample_rate / self.controller.frequency)
-        possible_offset = int(self.controller.sample_rate * self.controller.attack / 1000) - samples_per_cycle
         x_offset = 0
-        max_level = 0.0
-        min_level = 1.0
-        for i in range(possible_offset, min(len(left_channel)-1, possible_offset + int(2 * samples_per_cycle))):
-            current_level = left_channel[i] 
-            if current_level > max_level:
-                max_level = current_level
-                x_offset = possible_offset
-            elif current_level < 0:
-                min_level = 1.0 # reset the minimum level
-            if abs(current_level) < min_level:
-                min_level = abs(current_level)
-                possible_offset = i
         self._debug_2("Starting plot at sample = " + str(x_offset))
         
         # Plot signal to display
         origin_x = 0
         origin_y = int(self.scope.height / 2)
         previous_x = origin_x
-        previous_y = origin_y        
-        num_points = min(800, len(left_channel))
+        previous_y = origin_y
+        sub_sampling_factor = 9
+        #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.scope.width)
+        num_points = int(min(800, len(left_channel) / sub_sampling_factor))
+        self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
         #num_points = len(left_channel)
         scale_x = (self.scope.width - 5)/ num_points
         scale_y = (self.scope.height - 5)/ 2.0
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * left_channel[i + x_offset]))
+            plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
             plot_x = int(origin_x + (scale_x * i))
             self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
@@ -328,10 +321,10 @@ class View:
         while voice < 4:
             while note < 25:
                 self.controller.on_request_note(voice, note % NUM_KEYS)
-                #now = time.perf_counter()
-                #time.sleep(next_time - now)
-                time.sleep(0.1)
-                next_time += 0.1
+                now = time.perf_counter()
+                time.sleep(next_time - now)
+                #time.sleep(0.15)
+                next_time += 0.100
                 note += 1
             voice += 1
             note = 0
@@ -390,6 +383,9 @@ if __name__ == "__main__":
             
         def on_request_frequency(self, frequency):
             self.view._debug_2("Set frequency to " + str(frequency))
+        
+        def on_request_note(self, voice, key):
+            self.view._debug_2("Set key to " + str(key))
             
         def on_request_width(self, width):
             self.view._debug_2("Set width % to " + str(width))

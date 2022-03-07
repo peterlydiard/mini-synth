@@ -18,23 +18,25 @@ If you edit the online version of this file, it may conflict with other changes 
 
 4. Make envelope shaper with controllable ADSR function to control tone amplitude. (Done)
 
-5. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
+5. Storage and recall of synth settings (voices and patches).
 
-6. Add tremolo (amplitude wobble) and  vibrato (frequency wobble) to all waveforms?
+6. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 
-7. Low frequency oscillators for modulating other parameters.
+7. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms?
 
-8. White and pink noise generators, random pitch and amplitude modulation.
+8. Low frequency oscillators for modulating other parameters.
 
-9. Storage and recall of synth settings (patches).
+9. White and pink noise generators, random pitch and amplitude modulation.
 
 10. Ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
 
 11. Melody recording and editing?
 
-12. Spectrum analysis and display? Could be too much processing.
+12. Spectrum analysis and display? Probably too much processing.
 
 ## Notes
+
+MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 
 
 When controlling the VCF from the envelope shaper, a frequency offset linked to the tone fundamental frequency
 should perhaps be applied, to give the same kind of tone colour variation in all octaves.
@@ -42,12 +44,11 @@ should perhaps be applied, to give the same kind of tone colour variation in all
 The Elektor Formant uses exponential amplitude control in its Voltage Controlled Amplifier for the main envelope
 and linear modulation for tremolo effects.
 
-Tremolo effect may be produced in waveform generation functions by adding periodic time offsets to the
+Vibrato effect may be produced in waveform generation functions by adding periodic time offsets to the
 sample times arrays.
 
-Are local objects automatically deleted on function exit?
-
-All notes are currently the same loudness and duration. A more complicated KB interface might get around this.
+All notes are currently the same loudness and duration. A more complicated screen KB interface might get around this.
+Some synths modify the ADSR length with pitch using "key follow". 
 
 The variable width waveforms have DC offsets which could be a problem in filter circuits using integrators.
 Perhaps a DC blocking filter could be used or the offsets could be calculated an removed in the tone generators.
@@ -58,9 +59,27 @@ time that varies?
 Can the program structure be modified to make maximum use of a processor with multiple CPU cores? (numpy is
 believed to do this automatically for some functions.)
 
-How can performance be measured?
-
 Does the sampled waveform create noticeable pitch/period jitter on square aand sawtooth waveforms?
+
+Are there performance limits in the pygame.mixer module that cause pausing during a high note rate?
+
+If different instruments have different ranges, where should the mapping from key numbers to tone frequencies be done?
+
+For a sequencer, how should note length be adjusted according to changes in tempo.
+
+Portamento-type pitch slides seem incompatible with a wavetable design.
+
+Perhaps envelope control of VCO pitch could be achieved for attack and sustain but not for release, which will move
+around with note length. The pitch offset during sustain may be best set to zero anyway. Inversion of ADSR is said to make
+for good drum sounds, but is this just due to an effective zero attack time?
+
+Self-oscillation of LPFs can be a positive feature apparently.
+
+Extended LFO rates into the audio range with independent LFO control of VCO and pulse width can produce very complex sounds.
+
+Stereo panning, ring modulation.
+
+Roland RE201 Space Echo.
 
 ## Background reading:
 
