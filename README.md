@@ -36,7 +36,11 @@ If you edit the online version of this file, it may conflict with other changes 
 
 ## Notes
 
-MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 
+MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 55 Hz is MIDI key 33 and number increases
+by 12 every octave.
+
+The number of saved voice settings may be greater than can be handled by the processor at once, so there needs
+to be a distinction between active voices and stored voice settings.
 
 When controlling the VCF from the envelope shaper, a frequency offset linked to the tone fundamental frequency
 should perhaps be applied, to give the same kind of tone colour variation in all octaves.

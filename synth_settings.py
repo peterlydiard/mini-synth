@@ -22,6 +22,8 @@ def read_synth_settings(filename):
 
                 # add cell [1] to list of values
                 values.append(row[1])
+                
+            print("Settings read from file: " + filename)
 
     except:
         print("WARNING: file: \'" + filename + "\' not found, or wrong format.")
@@ -40,6 +42,8 @@ def write_synth_settings(filename, names, values):
         
         for i in range(len(names)):
             csv_writer.writerow([names[i], values[i]])
+            
+    print("Settings written to file: " + filename)
 
 #------------------------Module tests-----------------------
 #if __name__ == "__main__":

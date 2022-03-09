@@ -256,21 +256,7 @@ if __name__ == "__main__":
     finish = time.perf_counter()
     print("No of samples / tone = " +str(len(sine_tone)))
     print("Calculation of 4 tones in seconds = " + str(finish - start))
-    
-    #Generate stereo waveforms
-    #sine2 = model.sine_wave(FREQUENCY, DURATION)
-    #square2 = model.square_wave(FREQUENCY, DURATION)
-    #sawtooth2 = model.sawtooth_wave(FREQUENCY, DURATION)
-    #triangle2 = model.triangle_wave(FREQUENCY, DURATION)
-    
-    #sawtooth3 = model.pwm_sawtooth_wave(FREQUENCY, WIDTH, DURATION)
-    #square3 = model.pwm_square_wave(FREQUENCY, WIDTH, DURATION, False)
-    
-    #envelope = model.change_envelope(10, 20, 100, 70, 10)
-    
-    #for i in range(100):
-     #   print(str(i) + ": " + str(envelope[i]))
-        
+           
     print("\nDoing mono amplitude modulation")
     
     start = time.perf_counter()

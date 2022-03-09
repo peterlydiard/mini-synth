@@ -83,17 +83,21 @@ class View:
         
         self.panel_1 = Box(self.app, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
-        self.waveform_button = Combo(self.panel_1, grid=[0,0], options=["Sine","Triangle","Sawtooth","Square"],
+                
+        self.voice_combo = Combo(self.panel_1, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+                                     height="fill", command=self.handle_set_voice)
+                
+        self.waveform_combo = Combo(self.panel_1, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self.handle_set_waveform)
 
-        self.play_button = PushButton(self.panel_1, grid=[1,0], text="Play", command=self.handle_request_play)
+        self.play_button = PushButton(self.panel_1, grid=[2,0], text="Play", command=self.handle_request_play)
 
-        self.sequence_button = PushButton(self.panel_1, grid=[2,0], text="Sequence", command=self.handle_request_sequence)
-        
+        self.sequence_button = PushButton(self.panel_1, grid=[3,0], text="Sequence", command=self.handle_request_sequence)
+
         self.panel_2 = Box(self.app, layout="grid", border=10)
         self.panel_2.set_border(thickness=5, color=self.app.bg)
         
-        freq_label = Text(self.panel_2, grid=[0,1], text="Frequency, Hz: ")
+        freq_label = Text(self.panel_2, grid=[0,1], text="Tone frequency, Hz: ")
         self.freq_display = Text(self.panel_2, grid=[1,1], text=str(self.controller.frequency))
         
         self.panel_3 = Box(self.app, layout="grid", border=10)
@@ -113,9 +117,28 @@ class View:
         # set up exit function
         self.app.when_closed = self.handle_close_app
         
-        # enter endless loop, waiting for user input.
+        self.show_new_settings()
+        
+        # enter endless loop, waiting for user input via guizero widgets.
         self.app.display()
         
+    def show_new_settings(self):
+        voice_name = "Voice " + str(self.controller.voice_index + 1)
+        self._update_combo(self.voice_combo, voice_name)
+        waveform_name = self.controller.voices[self.controller.voice_index].waveform
+        self._update_combo(self.waveform_combo, waveform_name)
+        self.attack_slider.value = str(self.controller.voices[self.controller.voice_index].attack)
+        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
+        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
+        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
+        
+    def _update_combo(self, combo, option):
+        if not combo.remove(option):
+            self._debug_1("WARNING: Tried to remove unknown option = " + str(option))
+        else:
+            combo.insert(0, option)
+            combo.select_default()
         
     def play_sound(self, wave):
         global last_output_time
@@ -172,34 +195,39 @@ class View:
             previous_x = plot_x
             previous_y = plot_y
             
+    def shutdown(self):
+        self._debug_1("\nNormal termination")
+        pygame.mixer.music.stop()
+        self.app.destroy()        
+            
     #---------------------- Helper Functions --------------------
     # (intended only for use inside this module)
 
     def _shaper_controls(self):
             Text(self.shaper_panel, grid=[0,0], text="Attack time, ms: ")
-            self.attack = Slider(self.shaper_panel, grid=[1,0], start=MAX_ATTACK//10, end=MAX_ATTACK,
-                         width=180, command=self.handle_set_attack)
-            self.attack.value = MAX_ATTACK // 2 # Initial value
+            self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=MAX_ATTACK//10, end=MAX_ATTACK,
+                                        width=180, command=self.handle_set_attack)
+            self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
             
             Text(self.shaper_panel, grid=[0,1], text="Decay time, ms:")
-            self.decay = Slider(self.shaper_panel, grid=[1,1], start=MAX_DECAY//10, end=MAX_DECAY,
-                         width=180, command=self.handle_set_decay)
-            self.decay.value = MAX_DECAY // 2 # Initial value
+            self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=MAX_DECAY//10, end=MAX_DECAY,
+                                       width=180, command=self.handle_set_decay)
+            self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
             
             Text(self.shaper_panel, grid=[0,2], text="Sustain time, ms: ")
-            self.sustain = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
-                         width=180, command=self.handle_set_sustain)
-            self.sustain.value = MAX_SUSTAIN // 2 # Initial value
+            self.sustain_slider = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+                                         width=180, command=self.handle_set_sustain)
+            self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
             
             Text(self.shaper_panel, grid=[0,3], text="Sustain level, %: ")
-            self.sustain_level = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
-                         width=180, command=self.handle_set_sustain_level)
-            self.sustain_level.value = 50 # Initial value
+            self.sustain_level_slider = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
+                                               width=180, command=self.handle_set_sustain_level)
+            self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
             
             Text(self.shaper_panel, grid=[0,4], text="Release time, ms: ")
-            self.release = Slider(self.shaper_panel, grid=[1,4], start=MAX_RELEASE//10, end=MAX_RELEASE,
-                         width=180, command=self.handle_set_release)
-            self.release.value = MAX_RELEASE // 2 # Initial value
+            self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=MAX_RELEASE//10, end=MAX_RELEASE,
+                                         width=180, command=self.handle_set_release)
+            self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
     
     def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
@@ -281,6 +309,10 @@ class View:
         
     #-------------------- Event Handlers --------------------
     
+    def handle_set_voice(self, value):
+        # pass on the number part of the string value
+        self.controller.on_request_voice(value[6:])
+    
     def handle_set_waveform(self, value):
         self.controller.on_request_waveform(value)
     
@@ -332,13 +364,7 @@ class View:
         self._debug_2("100 notes in seconds = " + str(finish - start))
         debug_level = old_debug
         self.update_display = True
-    
-    def handle_request_save(self):
-        self.controller.on_request_save()
-        
-    def handle_request_restore(self):
-        self.controller.on_request_restore()
-            
+               
     def handle_mouse_dragged(self, event):
         self._debug_2("Mouse (pointer) deragged event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
@@ -360,29 +386,58 @@ class View:
             self._debug_2("Not a key")        
 
     def handle_close_app(self):
-        self._debug_1("\nNormal termination")
-        pygame.mixer.music.stop()
-        self.app.destroy()
+        self.controller.on_request_shutdown()
+
 #--------------------------- end of View class ---------------------------
 
 #--------------------------- Test Functions ------------------------------
 if __name__ == "__main__":
 
+    SAMPLE_RATE = 44100
+    MAX_VOICES = 12
+    DEFAULT_FREQUENCY = 440
+    DEFAULT_ATTACK = 20
+    DEFAULT_DECAY = 20
+    DEFAULT_SUSTAIN = 100
+    DEFAULT_SUSTAIN_LEVEL = 50
+    DEFAULT_RELEASE = 20
+
+    class Voice_Parameters: 
+        def __init__(self):
+            self.number = 0 # This number may be unrelated to the position of the voice in any lists.
+            self.name = "Unused"
+            self.waveform = "Sine"
+            self.width = 100        
+            self.attack = DEFAULT_ATTACK
+            self.decay = DEFAULT_DECAY
+            self.sustain_time = DEFAULT_SUSTAIN
+            self.sustain_level = DEFAULT_SUSTAIN_LEVEL
+            self.release = DEFAULT_RELEASE
+            
     class TestController:
         def __init__(self):
-            self.waveform = "Sine"
-            self.frequency = 440
+            self.sample_rate = SAMPLE_RATE
+            self.frequency = DEFAULT_FREQUENCY
+            self.num_voices = 1
+            self.voices = []
+            self.voice_index = 0
             self.view = View(self)
         
         def main(self):
             self.view._debug_2("In main of test controller")
+            for voice_index in range(MAX_VOICES):
+                voice_params = Voice_Parameters()
+                self.voices.append(voice_params)
             self.view.main()
 
+        def on_request_voice(self, voice):
+            self._debug_2("Set voice requested: " + str(voice))
+        
         def on_request_waveform(self, waveform):
             self.view._debug_2("Set waveform requested: " + waveform)
             
         def on_request_frequency(self, frequency):
-            self.view._debug_2("Set frequency to " + str(frequency))
+            self.view._debug_2("Set tone frequency to " + str(frequency) + " Hz")
         
         def on_request_note(self, voice, key):
             self.view._debug_2("Set key to " + str(key))
@@ -407,12 +462,23 @@ if __name__ == "__main__":
                 
         def on_request_play(self):
             self.view._debug_2("Play Sound requested")
-                  
-        def on_request_save(self):
-            self.view._debug_2("Save settings requested")
             
-        def on_request_restore(self):
-            self.view._debug_2("Restore settings requested")
+        def on_request_sequence(self):
+            self._debug_2("Play Sequence requested.")
+        
+        def on_request_shutdown(self):
+            self._debug_2("Shutdown requested")
+
+        def _debug_1(self, message):
+            global debug_level
+            if debug_level >= 1:
+                print(message)
+            
+        def _debug_2(self, message):
+            global debug_level
+            if debug_level >= 2:
+                print(message)
+            
             
     debug_level = 2       
     tc = TestController()
