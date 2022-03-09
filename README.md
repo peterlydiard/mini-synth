@@ -18,7 +18,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 4. Make envelope shaper with controllable ADSR function to control tone amplitude. (Done)
 
-5. Storage and recall of synth settings (voices and patches).
+5. Storage and recall of synth settings (voices and patches). (Under construction)
 
 6. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 
@@ -33,6 +33,13 @@ If you edit the online version of this file, it may conflict with other changes 
 11. Melody recording and editing?
 
 12. Spectrum analysis and display? Probably too much processing.
+
+## Known Bugs / Issues
+
+On changing to a sawtooth or square wave, a note is played and the note waveform is displayed. For sine and triangle waves, the evelope
+is shown and no sound is played.
+
+The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
 ## Notes
 

@@ -142,7 +142,7 @@ class Model:
         self.sustain_level = voice.sustain_level / 100
         self.release = voice.release
         self.duration = voice.attack + voice.decay + voice.sustain_time + voice.release
-        self._debug_1("Envelope duration, ms = " + str(self.duration))
+        self._debug_2("Envelope duration, ms = " + str(self.duration))
         # Generate array with duration*sample_rate steps, ranging between 0 and duration (milli-seconds)
         times_msec = np.linspace(0, self.duration, int(self.sample_rate * self.duration/1000), False)
         self._debug_2("No. of samples = " + str(len(times_msec)))
@@ -213,12 +213,12 @@ class Model:
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
-            print(message)
+            print("synth_model.py: " + message)
         
     def _debug_2(self, message):
         global debug_level
         if debug_level >= 2:
-            print(message)
+            print("synth_model.py: " + message)
 
 #------------------------- Module Test Funcctions -------------------------
 if __name__ == "__main__":

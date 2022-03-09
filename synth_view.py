@@ -46,7 +46,7 @@ MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 # Variables
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 1
+debug_level = 2
 last_output_time = 0
 # ------------------------------
 #  Notes:
@@ -104,9 +104,9 @@ class View:
         self.panel_3.set_border(thickness=10, color=self.app.bg)
         
         width_label = Text(self.panel_3, grid=[0,1], text="Width, % ")
-        self.width_button = Slider(self.panel_3, grid=[1,1], start=10, end=100,
-                         width=180, command=self.handle_set_width)
-        self.width_button.value = 100
+        self.width_slider = Slider(self.panel_3, grid=[1,1], start=10, end=100,
+                            width=180, command=self.handle_set_width)
+        self.width_slider.value = 100
         
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
@@ -132,6 +132,7 @@ class View:
         self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
+        self.width_slider.value = self.controller.voices[self.controller.voice_index].width
         
     def _update_combo(self, combo, option):
         if not combo.remove(option):
@@ -278,12 +279,12 @@ class View:
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
-            print(message)
+            print("synth_view.py: " + message)
         
     def _debug_2(self, message):
         global debug_level
         if debug_level >= 2:
-            print(message)
+            print("synth_view.py: " + message)
     
     def _identify_key_number(self, x, y):
         semitone = -1 # default value for "not a key"
@@ -311,7 +312,7 @@ class View:
     
     def handle_set_voice(self, value):
         # pass on the number part of the string value
-        self.controller.on_request_voice(value[6:])
+        self.controller.on_request_voice(int(value[6:]) - 1)
     
     def handle_set_waveform(self, value):
         self.controller.on_request_waveform(value)
@@ -341,28 +342,8 @@ class View:
         self.controller.on_request_play()
         
     def handle_request_sequence(self):
-        global debug_level
-        old_debug = debug_level
-        debug_level = 2
         self.update_display = False
-        self._debug_2("\nDoing 100 note sequence")
-        start = time.perf_counter()
-        next_time = start + 0.1
-        voice = 0
-        note = 0
-        while voice < 4:
-            while note < 25:
-                self.controller.on_request_note(voice, note % NUM_KEYS)
-                now = time.perf_counter()
-                time.sleep(next_time - now)
-                #time.sleep(0.15)
-                next_time += 0.100
-                note += 1
-            voice += 1
-            note = 0
-        finish = time.perf_counter()
-        self._debug_2("100 notes in seconds = " + str(finish - start))
-        debug_level = old_debug
+        self.controller.on_request_sequence()
         self.update_display = True
                
     def handle_mouse_dragged(self, event):
@@ -472,12 +453,12 @@ if __name__ == "__main__":
         def _debug_1(self, message):
             global debug_level
             if debug_level >= 1:
-                print(message)
+                print("synth_view.py: " + message)
             
         def _debug_2(self, message):
             global debug_level
             if debug_level >= 2:
-                print(message)
+                print("synth_view.py: " + message)
             
             
     debug_level = 2       
