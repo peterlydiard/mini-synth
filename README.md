@@ -20,9 +20,9 @@ If you edit the online version of this file, it may conflict with other changes 
 
 5. Storage and recall of synth settings (voices and patches). (Under construction)
 
-6. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
+6. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms.
 
-7. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms?
+7. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 
 8. Low frequency oscillators for modulating other parameters.
 
@@ -36,8 +36,10 @@ If you edit the online version of this file, it may conflict with other changes 
 
 ## Known Bugs / Issues
 
-On changing to a sawtooth or square wave, a note is played and the note waveform is displayed. For sine and triangle waves, the evelope
-is shown and no sound is played.
+On changing to a sawtooth or square wave, a note is played and the note waveform is displayed. For sine and triangle
+waves, the evelope is shown and no sound is played.
+
+The envelope shaper should perhaps be using an exponential gain function to accentuate level differences.
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
@@ -48,6 +50,8 @@ by 12 every octave.
 
 The number of saved voice settings may be greater than can be handled by the processor at once, so there needs
 to be a distinction between active voices and stored voice settings.
+
+Different voices may have different pitch ranges and key to semitone mappings.
 
 When controlling the VCF from the envelope shaper, a frequency offset linked to the tone fundamental frequency
 should perhaps be applied, to give the same kind of tone colour variation in all octaves.
