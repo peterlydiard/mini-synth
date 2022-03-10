@@ -36,12 +36,15 @@ If you edit the online version of this file, it may conflict with other changes 
 
 ## Known Bugs / Issues
 
-On changing to a sawtooth or square wave, a note is played and the note waveform is displayed. For sine and triangle
-waves, the evelope is shown and no sound is played.
-
 The envelope shaper should perhaps be using an exponential gain function to accentuate level differences.
 
+The voices should all have their own envelope in the Model class.
+
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
+
+The view object reads some parameters like frequency directly from the controller object. Is this bad practice?
+
+Dragging the mouse past the right of the keyboard produces invalid key / semitone numbers.
 
 ## Notes
 

@@ -46,7 +46,7 @@ MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 # Variables
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 2
+debug_level = 1
 last_output_time = 0
 # ------------------------------
 #  Notes:
@@ -316,9 +316,6 @@ class View:
     
     def handle_set_waveform(self, value):
         self.controller.on_request_waveform(value)
-    
-    def handle_set_frequency(self, value):
-        self.controller.on_request_frequency(value)
         
     def handle_set_width(self, value):
         self.controller.on_request_width(value)
@@ -351,8 +348,8 @@ class View:
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
-                frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
-                self.controller.on_request_frequency(frequency)
+                #frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+                self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")
         self.previous_key = semitone
@@ -361,8 +358,8 @@ class View:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
-            frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
-            self.controller.on_request_frequency(frequency)
+            #frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+            self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")        
 
@@ -412,7 +409,7 @@ if __name__ == "__main__":
             self.view.main()
 
         def on_request_voice(self, voice):
-            self._debug_2("Set voice requested: " + str(voice))
+            self._debug_2("Set voice requested, index = " + str(voice))
         
         def on_request_waveform(self, waveform):
             self.view._debug_2("Set waveform requested: " + waveform)
@@ -420,7 +417,7 @@ if __name__ == "__main__":
         def on_request_frequency(self, frequency):
             self.view._debug_2("Set tone frequency to " + str(frequency) + " Hz")
         
-        def on_request_note(self, voice, key):
+        def on_request_note(self, key, voice = -1):
             self.view._debug_2("Set key to " + str(key))
             
         def on_request_width(self, width):

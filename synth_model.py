@@ -35,8 +35,6 @@ class Model:
                  attack=ATTACK, decay=DECAY, sustain_time=SUSTAIN_TIME, sustain_level=SUSTAIN_LEVEL, release=RELEASE):
         self.sample_rate = sample_rate     # Hz
         self.frequency = frequency         # Hz
-        self.waveform = "Sine"
-        self.width = width                 # range is 0..100
         self.max_duration = max_duration   # milliseconds
         self.duration = duration           # milliseconds
         self.stereo = stereo               # Boolean
@@ -50,18 +48,14 @@ class Model:
 
 
     def main(self, max_voices=MAX_VOICES):
-        self.waveform = "Sine"
-        self.make_voice(0)
-        self.waveform = "Triangle"
-        self.make_voice(1)
-        self.waveform = "Sawtooth"
-        self.make_voice(2)
-        self.waveform = "Square"
-        self.make_voice(3)        
+        self.make_voice(0, "Sine")
+        self.make_voice(1, "Triangle")
+        self.make_voice(2, "Sawtooth", 100)
+        self.make_voice(3, "Square", 100)        
         pass
         
     # Create a unit-amplitude sine wave.
-    def sine_wave(self, frequency):
+    def _sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
         self.frequency = frequency
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
@@ -74,7 +68,7 @@ class Model:
 
 
     # Create a unit-amplitude trianle wave.
-    def triangle_wave(self, frequency):
+    def _triangle_wave(self, frequency):
         self.frequency = frequency   
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
         ramp = np.linspace(0, (2 * frequency * self.max_duration/1000), int(self.sample_rate * self.max_duration/1000), False)
@@ -84,10 +78,10 @@ class Model:
 
     
     # Create a unit-amplitude sawtooth wave with pulse width control.
-    def pwm_sawtooth_wave(self, frequency, width):
+    def _pwm_sawtooth_wave(self, frequency, width):
         #print("Saw wave freq, width, duration = " + str(frequency) + ", " + str(width)+ ", " + str(duration))
         self.frequency = frequency
-        self.width = width
+        width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration/1000) + 2 - width/100,
                            int(self.sample_rate * self.max_duration / 1000), False)
@@ -97,10 +91,10 @@ class Model:
     
     
     # Create a unit-amplitude square wave with pulse width control.
-    def pwm_square_wave(self, frequency, width):
+    def _pwm_square_wave(self, frequency, width):
         #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
         self.frequency = frequency
-        self.width = width
+        width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration / 1000) + 2 - width/100,
                            int(self.sample_rate * self.max_duration / 1000), False)
@@ -112,7 +106,7 @@ class Model:
     # Apply the envelope amplitude to the tone to make a note
     def apply_envelope(self, tone, stereo=True):
         if tone is None:
-            print("ERROR: tone is None in apply_envelope().")
+            self._debug_1("ERROR: tone is None in apply_envelope().")
             return None
         self.stereo = stereo
         
@@ -121,7 +115,7 @@ class Model:
         self._debug_2("Envelope shape = " + str(self.envelope.shape))       
 
         if (len(self.envelope) > len(tone)):
-            print("Error: Tone is shorter than envelope in apply_envelope.")
+            self._debug_1("Error: Tone is shorter than envelope in apply_envelope.")
             return None
         else:
             # Truncate input tone to match length of the envelope.
@@ -182,21 +176,20 @@ class Model:
         return self.envelope
     
     
-    def make_voice(self, voice_index):
+    def make_voice(self, voice_index, waveform, width=100):
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
         for semitone in range(NUM_KEYS):
             frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
-            waveform = self.waveform
             if waveform == "Sine":
-                self.voices[voice_index, semitone] = self.sine_wave(frequency)
+                self.voices[voice_index, semitone] = self._sine_wave(frequency)
             elif waveform == "Triangle":
-                self.voices[voice_index, semitone] = self.triangle_wave(frequency)
+                self.voices[voice_index, semitone] = self._triangle_wave(frequency)
             elif waveform == "Sawtooth":
-                self.voices[voice_index, semitone] = self.pwm_sawtooth_wave(frequency, self.width)
+                self.voices[voice_index, semitone] = self._pwm_sawtooth_wave(frequency, width)
             elif waveform == "Square":
-                self.voices[voice_index, semitone] = self.pwm_square_wave(frequency, self.width)
+                self.voices[voice_index, semitone] = self._pwm_square_wave(frequency, width)
             else:
                 self._debug_1("ERROR: invalid waveform in make_voice() = " + str(waveform))
                 
@@ -240,7 +233,7 @@ if __name__ == "__main__":
     
     model = Model(SAMPLE_RATE, FREQUENCY, WIDTH, DURATION, STEREO, ATTACK, DECAY, SUSTAIN_TIME, SUSTAIN_LEVEL, RELEASE)
     
-    print("Calculating test waveforms: sine_tone, triangle_tone, sawtooth_tone, square_tone.")
+    model._debug_1("Calculating test waveforms: sine_tone, triangle_tone, sawtooth_tone, square_tone.")
  
     # Generate mono waveforms
     
@@ -248,33 +241,33 @@ if __name__ == "__main__":
     
     model.duration = DURATION
     width = 50
-    sine_tone = model.sine_wave(FREQUENCY)
-    triangle_tone = model.triangle_wave(FREQUENCY)
-    sawtooth_tone = model.pwm_sawtooth_wave(FREQUENCY, width)
-    square_tone = model.pwm_square_wave(FREQUENCY, width)
+    sine_tone = model._sine_wave(FREQUENCY)
+    triangle_tone = model._triangle_wave(FREQUENCY)
+    sawtooth_tone = model._pwm_sawtooth_wave(FREQUENCY, width)
+    square_tone = model._pwm_square_wave(FREQUENCY, width)
     
     finish = time.perf_counter()
-    print("No of samples / tone = " +str(len(sine_tone)))
-    print("Calculation of 4 tones in seconds = " + str(finish - start))
+    model._debug_1("No of samples / tone = " +str(len(sine_tone)))
+    model._debug_1("Calculation of 4 tones in seconds = " + str(finish - start))
            
-    print("\nDoing mono amplitude modulation")
+    model._debug_1("\nDoing mono amplitude modulation")
     
     start = time.perf_counter()
     
     sine_note_1 = model.apply_envelope(sine_tone, False)
     
-    print("\nDoing stereo amplitude modulation")
+    model._debug_1("\nDoing stereo amplitude modulation")
     
     sine_note_2 = model.apply_envelope(sine_tone)    
     
     finish = time.perf_counter()
     
-    print("Modulation in mono and stereo in seconds = " + str(finish - start))
+    model._debug_1("Modulation in mono and stereo in seconds = " + str(finish - start))
     
-    print("\nDoing make_voice()")
+    model._debug_1("\nDoing make_voice()")
     
     start = time.perf_counter()    
-    model.make_voice(0)
+    model.make_voice(0, "Sine")
     finish = time.perf_counter()
     
-    print("Make 1 voice in seconds = " + str(finish - start))
+    model._debug_1("Make 1 voice in seconds = " + str(finish - start))

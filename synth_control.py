@@ -15,6 +15,7 @@ SAMPLE_RATE = 44100
 MAX_VOICES = 12
 NUM_OCTAVES = 3
 NUM_KEYS = (12 * NUM_OCTAVES) + 1
+LOWEST_TONE = 110
 DEFAULT_FREQUENCY = 440
 DEFAULT_ATTACK = 20
 DEFAULT_DECAY = 20
@@ -23,7 +24,7 @@ DEFAULT_SUSTAIN_LEVEL = 50
 DEFAULT_RELEASE = 20
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 2
+debug_level = 1
 # ------------------------------
 # Classes
 # ------------------------------
@@ -80,30 +81,35 @@ class Controller:
     def on_request_waveform(self, waveform):
         self._debug_2("Set waveform requested: " + waveform)
         self.voices[self.voice_index].waveform = waveform
-        note = self._change_note(self.voice_index)    
+        width = self.voices[self.voice_index].width
+        self.model.make_voice(self.voice_index, waveform, width)
+        key = 12
+        tone = self.model.fetch_tone(self.voice_index, key)
+        note = self.model.apply_envelope(tone) 
         if not note is None:
             self.view.play_sound(note)        
         
-    def on_request_note(self, voice, key):
-        self._debug_2("Getting note for voice, key " + str(voice) + ", " + str(key))
-        tone = self.model.fetch_tone(voice, key)
+    def on_request_note(self, key, voice_index = -1):
+        # Calculate frequency to display
+        self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
+        if voice_index < 0: # If no voice_index given, use last stored value.
+            voice_index = self.voice_index
+        self._debug_2("Getting note for voice, key " + str(voice_index) + ", " + str(key))
+        tone = self.model.fetch_tone(voice_index, key)
         note = self.model.apply_envelope(tone)   
         if not note is None:
             self.view.play_sound(note)
             
-    def on_request_frequency(self, frequency):
-        self._debug_2("Set frequency to " + str(frequency))
-        self.frequency = float(frequency)
-        note = self._change_note(self.voice_index)    
-        if not note is None:
-            self.view.play_sound(note)
                        
     def on_request_width(self, width):
         voice = self.voices[self.voice_index]
         if voice.waveform == "Sawtooth" or voice.waveform == "Square":
             self._debug_2("Set width to " + str(width))
             self.voices[self.voice_index].width = float(width)
-            note = self._change_note(self.voice_index)    
+            self.model.make_voice(self.voice_index, voice.waveform, width)
+            key = 12
+            tone = self.model.fetch_tone(self.voice_index, key)
+            note = self.model.apply_envelope(tone)    
             if not note is None:
                 self.view.play_sound(note)
         else:
@@ -149,7 +155,7 @@ class Controller:
         note = 0
         while voice < 4:
             while note < 25:
-                self.on_request_note(voice, note % NUM_KEYS)
+                self.on_request_note(note % NUM_KEYS, voice)
                 now = time.perf_counter()
                 time.sleep(next_time - now)
                 #time.sleep(0.15)
@@ -258,13 +264,13 @@ class Controller:
     def _change_note(self, voice_index):
         voice = self.voices[voice_index]
         if voice.waveform == "Sine":
-            tone = self.model.sine_wave(float(self.frequency))
+            tone = self.model._sine_wave(float(self.frequency))
         elif voice.waveform == "Triangle":
-            tone = self.model.triangle_wave(float(self.frequency))
+            tone = self.model._triangle_wave(float(self.frequency))
         elif voice.waveform == "Sawtooth":
-            tone = self.model.pwm_sawtooth_wave(float(self.frequency), voice.width)
+            tone = self.model._pwm_sawtooth_wave(float(self.frequency), voice.width)
         elif voice.waveform == "Square":
-            tone = self.model.pwm_square_wave(float(self.frequency), voice.width)
+            tone = self.model._pwm_square_wave(float(self.frequency), voice.width)
         else:
             self._debug_1("Warning, waveform unknown: " + str(voice.waveform))
             tone = None
