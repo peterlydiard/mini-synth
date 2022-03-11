@@ -18,7 +18,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 4. Make envelope shaper with controllable ADSR function to control tone amplitude. (Done)
 
-5. Storage and recall of synth settings (voices and patches). (Under construction)
+5. Storage and recall of synth settings (voices and patches). (Done for voices.)
 
 6. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms.
 
@@ -32,11 +32,11 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. Melody recording and editing?
 
-12. Spectrum analysis and display? Probably too much processing.
+12. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
+
+13. Algorithmic sequence generation, e.g. using Conways Game of Life?
 
 ## Known Bugs / Issues
-
-The envelope shaper should perhaps be using an exponential gain function to accentuate level differences.
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
@@ -49,7 +49,9 @@ MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 55 Hz i
 by 12 every octave.
 
 The number of saved voice settings may be greater than can be handled by the processor at once, so there needs
-to be a distinction between active voices and stored voice settings.
+to be a distinction between active voices and stored voice settings. A configuration file might point to
+different settings files, but this creates the possibility of two voices having the same ID but different
+parameters.
 
 Different voices may have different pitch ranges and key to semitone mappings.
 
@@ -74,11 +76,12 @@ time that varies?
 Can the program structure be modified to make maximum use of a processor with multiple CPU cores? (numpy is
 believed to do this automatically for some functions.)
 
-Does the sampled waveform create noticeable pitch/period jitter on square aand sawtooth waveforms?
+Does the sampled waveform create noticeable pitch/period jitter on square and sawtooth waveforms?
 
 Are there performance limits in the pygame.mixer module that cause pausing during a high note rate?
 
 If different instruments have different ranges, where should the mapping from key numbers to tone frequencies be done?
+Use MIDI key numbers?
 
 For a sequencer, how should note length be adjusted according to changes in tempo.
 
