@@ -68,7 +68,7 @@ class Controller:
         
 
     def on_request_voice(self, voice):
-        self._debug_2("Set voice requested: " + str(voice))
+        self._debug_2("In on_request_voice: " + str(voice))
         vi = int(voice)
         if vi >= 0 and vi < MAX_VOICES:
             self.voice_index = vi
@@ -79,7 +79,7 @@ class Controller:
             self._debug_1("ERROR: unexpected voice index = " + str(voice))
         
     def on_request_waveform(self, waveform):
-        self._debug_2("Set waveform requested: " + waveform)
+        self._debug_2("In on_request_waveform: " + waveform)
         self.voices[self.voice_index].waveform = waveform
         width = self.voices[self.voice_index].width
         self.model.make_voice(self.voice_index, waveform, width)
@@ -90,18 +90,21 @@ class Controller:
             self.view.play_sound(note)        
         
     def on_request_note(self, key, voice_index = -1):
+        self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
         # Calculate frequency to display
         self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
         if voice_index < 0: # If no voice_index given, use last stored value.
             voice_index = self.voice_index
         self._debug_2("Getting note for voice, key " + str(voice_index) + ", " + str(key))
         tone = self.model.fetch_tone(voice_index, key)
-        note = self.model.apply_envelope(tone)   
+        note = self.model.apply_envelope(tone)
+        #note = self._change_note(voice_index)
         if not note is None:
             self.view.play_sound(note)
             
                        
     def on_request_width(self, width):
+        self._debug_2("In on_request_width: " + str(width))
         voice = self.voices[self.voice_index]
         if voice.waveform == "Sawtooth" or voice.waveform == "Square":
             self._debug_2("Set width to " + str(width))
@@ -116,48 +119,50 @@ class Controller:
             self._debug_1("Width of this waveform is fixed.")
 
     def on_request_attack(self, value):
-        self._debug_2("Set attack to " + str(value))
+        self._debug_2("In on_request_attack: " + str(value))
         self.voices[self.voice_index].attack = int(value)
         self._change_envelope()
         
     def on_request_decay(self, value):
-        self._debug_2("Set decay to " + str(value))
+        self._debug_2("In on_request_decay: " + str(value))
         self.voices[self.voice_index].decay = int(value)
         self._change_envelope()
         
     def on_request_sustain(self, value):
-        self._debug_2("Set sustain to " + str(value))
+        self._debug_2("In on_request_sustain: " + str(value))
         self.voices[self.voice_index].sustain_time = int(value)
         self._change_envelope()
         
     def on_request_sustain_level(self, value):
-        self._debug_2("Set sustain level to " + str(value))
+        self._debug_2("In on_request_sustain_level: " + str(value))
         self.voices[self.voice_index].sustain_level = int(value)
         self._change_envelope()
         
     def on_request_release(self, value):
-        self._debug_2("Set release to " + str(value))
+        self._debug_2("In on_request_release: " + str(value))
         self.voices[self.voice_index].release = int(value)
         self._change_envelope()
                     
     def on_request_play(self):
-        self._debug_2("Play Sound requested.")
+        self._debug_2("In on_request_play().")
         note = self._change_note(self.voice_index)    
         if not note is None:
             self.view.play_sound(note)
             
     def on_request_sequence(self):
-        self._debug_2("Play Sequence requested.")
+        self._debug_2("In on_request_sequence().")
         self._debug_2("\nDoing 100 note sequence")
         start = time.perf_counter()
-        next_time = start + 0.1
+        self._debug_1("Timer start = " + str(start))
+        next_time = start + 0.15
         voice = 0
         note = 0
         while voice < 4:
             while note < 25:
                 self.on_request_note(note % NUM_KEYS, voice)
                 now = time.perf_counter()
-                time.sleep(next_time - now)
+                # self._debug_1("Timer now = " + str(now))
+                time.sleep(max(0, next_time - now))
                 #time.sleep(0.15)
                 next_time += 0.100
                 note += 1
