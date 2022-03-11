@@ -103,7 +103,7 @@ class View:
         self.panel_3 = Box(self.app, layout="grid", border=10)
         self.panel_3.set_border(thickness=10, color=self.app.bg)
         
-        width_label = Text(self.panel_3, grid=[0,1], text="Width, % ")
+        self.width_label = Text(self.panel_3, grid=[0,1], text="Width, % ")
         self.width_slider = Slider(self.panel_3, grid=[1,1], start=10, end=100,
                             width=180, command=self.handle_set_width)
         self.width_slider.value = 100
@@ -133,7 +133,14 @@ class View:
         self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
-        self.width_slider.value = self.controller.voices[self.controller.voice_index].width
+        waveform = self.controller.voices[self.controller.voice_index].waveform
+        if waveform == "Sawtooth" or waveform == "Square":
+            self.width_label.show()
+            self.width_slider.show()
+            self.width_slider.value = self.controller.voices[self.controller.voice_index].width
+        else:
+            self.width_label.hide()
+            self.width_slider.hide()
         
     def _update_combo(self, combo, option):
         self._debug_2("In _update_combo()")
@@ -169,7 +176,7 @@ class View:
         
         if self.update_display == True:
             self._debug_2("Updating display")
-            #self.freq_display.value = int(self.controller.frequency)
+            self.freq_display.value = int(self.controller.frequency)
             self._plot_sound(wave)
         
         return 0
@@ -186,7 +193,7 @@ class View:
         previous_x = origin_x
         previous_y = origin_y        
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
-        sub_sampling_factor = 9
+        sub_sampling_factor = 9 # found by trial and error
         scope_trace = np.zeros(int(num_points), dtype = float)
         for i in range(len(envelope)):
             scope_trace[i] += envelope[i]
@@ -212,30 +219,30 @@ class View:
     # (intended only for use inside this module)
 
     def _shaper_controls(self):
-        self._debug_2("In _shpaer_controls()")
+        self._debug_2("In _shaper_controls()")
         Text(self.shaper_panel, grid=[0,0], text="Attack time, ms: ")
-        self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=MAX_ATTACK//10, end=MAX_ATTACK,
-                                    width=180, command=self.handle_set_attack)
+        self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=1, end=MAX_ATTACK,
+                                    width=200, command=self.handle_set_attack)
         self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
         
         Text(self.shaper_panel, grid=[0,1], text="Decay time, ms:")
-        self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=MAX_DECAY//10, end=MAX_DECAY,
-                                   width=180, command=self.handle_set_decay)
+        self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=1, end=MAX_DECAY,
+                                   width=200, command=self.handle_set_decay)
         self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
         
         Text(self.shaper_panel, grid=[0,2], text="Sustain time, ms: ")
         self.sustain_slider = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
-                                     width=180, command=self.handle_set_sustain)
+                                     width=200, command=self.handle_set_sustain)
         self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
         
         Text(self.shaper_panel, grid=[0,3], text="Sustain level, %: ")
         self.sustain_level_slider = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
-                                           width=180, command=self.handle_set_sustain_level)
+                                           width=200, command=self.handle_set_sustain_level)
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         
         Text(self.shaper_panel, grid=[0,4], text="Release time, ms: ")
-        self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=MAX_RELEASE//10, end=MAX_RELEASE,
-                                     width=180, command=self.handle_set_release)
+        self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=1, end=MAX_RELEASE,
+                                     width=200, command=self.handle_set_release)
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
     
@@ -275,7 +282,6 @@ class View:
         #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.scope.width)
         num_points = int(min(800, len(left_channel) / sub_sampling_factor))
         self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
-        #num_points = len(left_channel)
         scale_x = (self.scope.width - 5)/ num_points
         scale_y = (self.scope.height - 5)/ 2.0
         for i in range(num_points):
@@ -329,9 +335,15 @@ class View:
         # pass on the number part of the string value
         self.controller.on_request_voice(int(value[6:]) - 1)
     
-    def handle_set_waveform(self, value):
+    def handle_set_waveform(self, waveform):
         self._debug_2("In handle_set_waveform()")
-        self.controller.on_request_waveform(value)
+        if waveform == "Sawtooth" or waveform == "Square":
+            self.width_label.show()
+            self.width_slider.show()
+        else:
+            self.width_label.hide()
+            self.width_slider.hide()
+        self.controller.on_request_waveform(waveform)
         
     def handle_set_width(self, value):
         self._debug_2("In handle_set_width()")
@@ -375,7 +387,6 @@ class View:
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
-                #frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
                 self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")
@@ -385,7 +396,6 @@ class View:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
-            #frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
             self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")        
