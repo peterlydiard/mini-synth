@@ -85,7 +85,7 @@ class Controller:
         self.model.make_voice(self.voice_index, waveform, width)
         key = 12
         tone = self.model.fetch_tone(self.voice_index, key)
-        note = self.model.apply_envelope(tone) 
+        note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
             self.view.play_sound(note)        
         
@@ -97,7 +97,7 @@ class Controller:
             voice_index = self.voice_index
         self._debug_2("Getting note for voice, key " + str(voice_index) + ", " + str(key))
         tone = self.model.fetch_tone(voice_index, key)
-        note = self.model.apply_envelope(tone)
+        note = self.model.apply_envelope(self.voice_index, tone)
         #note = self._change_note(voice_index)
         if not note is None:
             self.view.play_sound(note)
@@ -112,7 +112,7 @@ class Controller:
             self.model.make_voice(self.voice_index, voice.waveform, width)
             key = 12
             tone = self.model.fetch_tone(self.voice_index, key)
-            note = self.model.apply_envelope(tone)    
+            note = self.model.apply_envelope(self.voice_index, tone)    
             if not note is None:
                 self.view.play_sound(note)
         else:
@@ -154,22 +154,18 @@ class Controller:
         self._debug_2("\nDoing 100 note sequence")
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
-        next_time = start + 0.15
-        voice = 0
+        next_time = start + 0.100
         note = 0
-        while voice < 4:
-            while note < 25:
-                self.on_request_note(note % NUM_KEYS, voice)
-                now = time.perf_counter()
-                # self._debug_1("Timer now = " + str(now))
-                time.sleep(max(0, next_time - now))
-                #time.sleep(0.15)
-                next_time += 0.100
-                note += 1
-            voice += 1
-            note = 0
+        while note < 100:
+            self.on_request_note(note % NUM_KEYS, self.voice_index)
+            now = time.perf_counter()
+            # self._debug_1("Timer now = " + str(now))
+            time.sleep(max(0, next_time - now))
+            #time.sleep(0.15)
+            next_time += 0.100
+            note += 1
         finish = time.perf_counter()
-        self._debug_2("100 notes in seconds = " + str(finish - start))
+        self._debug_1("100 notes in seconds = " + str(finish - start))
   
         
     def on_request_shutdown(self):
@@ -280,11 +276,11 @@ class Controller:
             self._debug_1("Warning, waveform unknown: " + str(voice.waveform))
             tone = None
         
-        note = self.model.apply_envelope(tone)
+        note = self.model.apply_envelope(voice_index, tone)
         return note
     
     def _change_envelope(self):
-        new_envelope = self.model.change_envelope(self.voices[self.voice_index])
+        new_envelope = self.model.change_envelope(self.voice_index, self.voices[self.voice_index])
         self.view.show_envelope(new_envelope)
   
     def _debug_1(self, message):
