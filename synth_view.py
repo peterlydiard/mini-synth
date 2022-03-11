@@ -123,6 +123,7 @@ class View:
         self.app.display()
         
     def show_new_settings(self):
+        self._debug_2("In show_new_setings()")
         voice_name = "Voice " + str(self.controller.voice_index + 1)
         self._update_combo(self.voice_combo, voice_name)
         waveform_name = self.controller.voices[self.controller.voice_index].waveform
@@ -135,6 +136,7 @@ class View:
         self.width_slider.value = self.controller.voices[self.controller.voice_index].width
         
     def _update_combo(self, combo, option):
+        self._debug_2("In _update_combo()")
         if not combo.remove(option):
             self._debug_1("WARNING: Tried to remove unknown option = " + str(option))
         else:
@@ -142,11 +144,12 @@ class View:
             combo.select_default()
         
     def play_sound(self, wave):
+        self._debug_2("In play_sound()")
         global last_output_time
         
         if not self.sound is None:
             self.sound.fadeout(200)
-            #self.sound = None
+            self.sound = None
         # Ensure that highest value is in 16-bit range
         max_level = np.max(np.abs(wave))
         if max_level == 0:
@@ -165,14 +168,15 @@ class View:
         last_output_time = now
         
         if self.update_display == True:
-            self.freq_display.value = int(self.controller.frequency)
+            self._debug_2("Updating display")
+            #self.freq_display.value = int(self.controller.frequency)
             self._plot_sound(wave)
         
         return 0
     
     
     def show_envelope(self, envelope):
-        self._debug_2("New envelope available")
+        self._debug_2("In show_envelope()")
         self.scope.clear()
         self.scope.bg = "dark gray"
             
@@ -183,6 +187,9 @@ class View:
         previous_y = origin_y        
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
         sub_sampling_factor = 9
+        scope_trace = np.zeros(int(num_points), dtype = float)
+        for i in range(len(envelope)):
+            scope_trace[i] += envelope[i]
         #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
         scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
         scale_y = (self.scope.height - 5)
@@ -190,7 +197,7 @@ class View:
         for i in range(num_points // sub_sampling_factor):
             #self._debug_2(envelope[int(i * sub_sampling_factor)])
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * envelope[int(i * sub_sampling_factor)]))
+            plot_y = int(origin_y - (scale_y * scope_trace[int(i * sub_sampling_factor)]))
             plot_x = int(origin_x + (scale_x * i))
             self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
@@ -205,33 +212,35 @@ class View:
     # (intended only for use inside this module)
 
     def _shaper_controls(self):
-            Text(self.shaper_panel, grid=[0,0], text="Attack time, ms: ")
-            self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=MAX_ATTACK//10, end=MAX_ATTACK,
-                                        width=180, command=self.handle_set_attack)
-            self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
-            
-            Text(self.shaper_panel, grid=[0,1], text="Decay time, ms:")
-            self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=MAX_DECAY//10, end=MAX_DECAY,
-                                       width=180, command=self.handle_set_decay)
-            self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
-            
-            Text(self.shaper_panel, grid=[0,2], text="Sustain time, ms: ")
-            self.sustain_slider = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
-                                         width=180, command=self.handle_set_sustain)
-            self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
-            
-            Text(self.shaper_panel, grid=[0,3], text="Sustain level, %: ")
-            self.sustain_level_slider = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
-                                               width=180, command=self.handle_set_sustain_level)
-            self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
-            
-            Text(self.shaper_panel, grid=[0,4], text="Release time, ms: ")
-            self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=MAX_RELEASE//10, end=MAX_RELEASE,
-                                         width=180, command=self.handle_set_release)
-            self.release_slider.value = self.controller.voices[self.controller.voice_index].release
+        self._debug_2("In _shpaer_controls()")
+        Text(self.shaper_panel, grid=[0,0], text="Attack time, ms: ")
+        self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=MAX_ATTACK//10, end=MAX_ATTACK,
+                                    width=180, command=self.handle_set_attack)
+        self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
+        
+        Text(self.shaper_panel, grid=[0,1], text="Decay time, ms:")
+        self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=MAX_DECAY//10, end=MAX_DECAY,
+                                   width=180, command=self.handle_set_decay)
+        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
+        
+        Text(self.shaper_panel, grid=[0,2], text="Sustain time, ms: ")
+        self.sustain_slider = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+                                     width=180, command=self.handle_set_sustain)
+        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+        
+        Text(self.shaper_panel, grid=[0,3], text="Sustain level, %: ")
+        self.sustain_level_slider = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
+                                           width=180, command=self.handle_set_sustain_level)
+        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
+        
+        Text(self.shaper_panel, grid=[0,4], text="Release time, ms: ")
+        self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=MAX_RELEASE//10, end=MAX_RELEASE,
+                                     width=180, command=self.handle_set_release)
+        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
     
     def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
+        self._debug_2("In _draw_keyboard()")
         self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
 
         for i in range(NUM_WHITE_KEYS):
@@ -247,6 +256,7 @@ class View:
                 
                     
     def _plot_sound(self, wave):
+        self._debug_2("In _plot_sound()")
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
         
@@ -287,6 +297,7 @@ class View:
             print("synth_view.py: " + message)
     
     def _identify_key_number(self, x, y):
+        self._debug_2("In _identify_key_number()")
         semitone = -1 # default value for "not a key"
         
         if y > BK_Y0 and y < BK_Y0 + BK_HEIGHT:
@@ -311,40 +322,53 @@ class View:
     #-------------------- Event Handlers --------------------
     
     def handle_set_voice(self, value):
+        self._debug_2("In handle_set_voice()")
         # pass on the number part of the string value
         self.controller.on_request_voice(int(value[6:]) - 1)
     
     def handle_set_waveform(self, value):
+        self._debug_2("In handle_set_waveform()")
         self.controller.on_request_waveform(value)
         
     def handle_set_width(self, value):
+        self._debug_2("In handle_set_width()")
         self.controller.on_request_width(value)
         
     def handle_set_attack(self, value):
+        self._debug_2("In handle_set_attack()")
         self.controller.on_request_attack(int(value))
 
     def handle_set_decay(self, value):
+        self._debug_2("In handle_set_decay()")
         self.controller.on_request_decay(int(value))
         
     def handle_set_sustain(self, value):
+        self._debug_2("In handle_set_sustain()")
         self.controller.on_request_sustain(int(value))
         
     def handle_set_sustain_level(self, value):
+        self._debug_2("In handle_set_sustain_level()")
         self.controller.on_request_sustain_level(value)
         
     def handle_set_release(self, value):
+        self._debug_2("In handle_set_release()")
         self.controller.on_request_release(int(value))
         
     def handle_request_play(self):
+        self._debug_2("In handle_request_play()")
         self.controller.on_request_play()
         
     def handle_request_sequence(self):
+        self._debug_2("In handle_request_sequence()")
         self.update_display = False
         self.controller.on_request_sequence()
         self.update_display = True
                
     def handle_mouse_dragged(self, event):
         self._debug_2("Mouse (pointer) deragged event at: (" + str(event.x) + ", " + str(event.y) + ")")
+        if event.x < 0 or event.x >= self.keyboard.width or event.y < 0 or event.y >= self.keyboard.height:
+            self._debug_2("WARNING: Mouse out of keyboard drawing.")
+            return
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
@@ -364,6 +388,7 @@ class View:
             self._debug_2("Not a key")        
 
     def handle_close_app(self):
+        self._debug_2("In handle_close_app()")
         self.controller.on_request_shutdown()
 
 #--------------------------- end of View class ---------------------------
