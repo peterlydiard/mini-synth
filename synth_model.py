@@ -43,7 +43,7 @@ class Model:
         self.sustain_time = sustain_time   # milliseconds
         self.sustain_level = sustain_level # range is 0..100
         self.release = release             # milliseconds
-        self.envelope = np.zeros((int(sample_rate * MAX_DURATION / 1000)), dtype=float)
+        self.envelopes = [] 
         self.voices = np.zeros((MAX_VOICES, NUM_KEYS, (int(sample_rate * MAX_DURATION / 1000))), dtype=float)
 
 
@@ -51,7 +51,10 @@ class Model:
         self.make_voice(0, "Sine")
         self.make_voice(1, "Triangle")
         self.make_voice(2, "Sawtooth", 100)
-        self.make_voice(3, "Square", 100)        
+        self.make_voice(3, "Square", 100)
+        for voice_index in range(MAX_VOICES):
+            envelope = np.zeros((int(self.sample_rate * MAX_DURATION / 1000)), dtype=float)
+            self.envelopes.append(envelope)
         pass
         
     # Create a unit-amplitude sine wave.
@@ -104,25 +107,28 @@ class Model:
     
     
     # Apply the envelope amplitude to the tone to make a note
-    def apply_envelope(self, tone, stereo=True):
+    def apply_envelope(self, voice_index, tone, stereo=True):
         self._debug_2("In apply_envelope() ")
         if tone is None:
             self._debug_1("ERROR: tone is None in apply_envelope().")
             return None
+        if voice_index < 0 or voice_index > MAX_VOICES:
+            self._debug_1("ERROR: voice_index = " + str(voice_index))
+            return None
         self.stereo = stereo
         
-        self._debug_2("No. of samples = " + str(len(self.envelope)))
+        self._debug_2("No. of samples = " + str(len(self.envelopes[voice_index])))
         self._debug_2("Tone shape = " + str(tone.shape))
-        self._debug_2("Envelope shape = " + str(self.envelope.shape))       
+        self._debug_2("Envelope shape = " + str(self.envelopes[voice_index].shape))       
 
-        if (len(self.envelope) > len(tone)):
+        if (len(self.envelopes[voice_index]) > len(tone)):
             self._debug_1("Error: Tone is shorter than envelope in apply_envelope.")
             return None
         else:
             # Truncate input tone to match length of the envelope.
-            tone = tone[:len(self.envelope)]
+            tone = tone[:len(self.envelopes[voice_index])]
             # Multiply each tone sample by the matching envelope sample.
-            note = np.multiply(tone, self.envelope)
+            note = np.multiply(tone, self.envelopes[voice_index])
             
         # Duplicate note to make left and right channels if required.
         if stereo == True:
@@ -130,7 +136,7 @@ class Model:
         return note
     
         
-    def change_envelope(self, voice):
+    def change_envelope(self, voice_index, voice):
         self._debug_2("In change_envelope() ")
         self.attack = voice.attack
         self.decay = voice.decay
@@ -175,8 +181,12 @@ class Model:
                 level = 0              
             new_envelope[i] = level
             
-        self.envelope = new_envelope     
-        return self.envelope
+        # Replace old envelope with new one
+        if len(self.envelopes) <= voice_index:
+            self._debug_1("WARNING: list of envelopes length = " + str(len(self.envelopes)))
+            self.envelopes.pop(voice_index)
+        self.envelopes.insert(voice_index, new_envelope)
+        return new_envelope
     
     
     def make_voice(self, voice_index, waveform, width=100):
@@ -288,7 +298,7 @@ if __name__ == "__main__":
     
     start = time.perf_counter()
     
-    env = model.change_envelope(voice_params)
+    env = model.change_envelope(0, voice_params)
         
     finish = time.perf_counter()
     
@@ -298,11 +308,11 @@ if __name__ == "__main__":
     
     start = time.perf_counter()
     
-    sine_note_1 = model.apply_envelope(sine_tone, False)
+    sine_note_1 = model.apply_envelope(0, sine_tone, False)
     
     model._debug_1("\nDoing stereo amplitude modulation")
     
-    sine_note_2 = model.apply_envelope(sine_tone)    
+    sine_note_2 = model.apply_envelope(0, sine_tone)    
     
     finish = time.perf_counter()
     
