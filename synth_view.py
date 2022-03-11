@@ -317,6 +317,9 @@ class View:
                 semitone = white_semitones[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
                 if semitone >= 0:
                     self._debug_2("White key pressed with number = " + str(semitone))
+        # Do extra safety-check (shouldn't really be necessary!)
+        if semitone >= NUM_KEYS:
+            semitone = -1
         return semitone
         
     #-------------------- Event Handlers --------------------
