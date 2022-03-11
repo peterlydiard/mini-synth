@@ -105,6 +105,7 @@ class Model:
     
     # Apply the envelope amplitude to the tone to make a note
     def apply_envelope(self, tone, stereo=True):
+        self._debug_2("In apply_envelope() ")
         if tone is None:
             self._debug_1("ERROR: tone is None in apply_envelope().")
             return None
@@ -130,6 +131,7 @@ class Model:
     
         
     def change_envelope(self, voice):
+        self._debug_2("In change_envelope() ")
         self.attack = voice.attack
         self.decay = voice.decay
         self.sustain_time = voice.sustain_time
@@ -137,8 +139,11 @@ class Model:
         self.release = voice.release
         self.duration = voice.attack + voice.decay + voice.sustain_time + voice.release
         self._debug_2("Envelope duration, ms = " + str(self.duration))
+        new_envelope_length = int(self.sample_rate * self.duration/1000)
+        self._debug_2("Envelope length, samples = " + str(new_envelope_length))
+        new_envelope = np.zeros(int(new_envelope_length), dtype=float)
         # Generate array with duration*sample_rate steps, ranging between 0 and duration (milli-seconds)
-        times_msec = np.linspace(0, self.duration, int(self.sample_rate * self.duration/1000), False)
+        times_msec = np.linspace(0, self.duration, int(new_envelope_length), False)
         self._debug_2("No. of samples = " + str(len(times_msec)))
             
         attack_level_change = 1.6 * times_msec[1] / self.attack  
@@ -147,7 +152,7 @@ class Model:
         self._debug_2("Attack level change = " + str(attack_level_change))
         self._debug_2("Decay level change = " + str(decay_level_change))
         self._debug_2("Release level change = " + str( release_level_change))
-        self._debug_2("Time step = " + str(times_msec[1]))
+        self._debug_2("Time step, milliseconds = " + str(times_msec[1]))
                 
         level = 0.0
         for i in range(len(times_msec)):
@@ -168,15 +173,14 @@ class Model:
                     level -= release_level_change * (level + 0.1)
             else:
                 level = 0              
-            self.envelope[i] = level
+            new_envelope[i] = level
             
-        for i in range(len(times_msec), len(self.envelope)):
-             self.envelope[i] = 0
-             
+        self.envelope = new_envelope     
         return self.envelope
     
     
     def make_voice(self, voice_index, waveform, width=100):
+        self._debug_2("In make_voice() ")
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
@@ -194,6 +198,7 @@ class Model:
                 self._debug_1("ERROR: invalid waveform in make_voice() = " + str(waveform))
                 
     def fetch_tone(self, voice_index, semitone):
+        self._debug_2("In fetch_tone()")
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in fetch_tone() = " + str(voice_index))
             return None
@@ -229,9 +234,38 @@ if __name__ == "__main__":
     SUSTAIN_LEVEL = 50
     RELEASE = 100
     
+    MAX_VOICES = 12
+    NUM_OCTAVES = 3
+    NUM_KEYS = (12 * NUM_OCTAVES) + 1
+    LOWEST_TONE = 110
+    DEFAULT_FREQUENCY = 440
+    DEFAULT_ATTACK = 20
+    DEFAULT_DECAY = 20
+    DEFAULT_SUSTAIN = 100
+    DEFAULT_SUSTAIN_LEVEL = 50
+    DEFAULT_RELEASE = 20
+
+    class Voice_Parameters:
+        def __init__(self):
+            self.number = 0 # This number may be unrelated to the position of the voice in any lists.
+            self.name = "Unused"
+            self.waveform = "Sine"
+            self.width = 100
+            self.vibrato_rate = 0
+            self.vibrato_depth = 0
+            self.tremelo_rate = 0
+            self.tremelo_depth = 0
+            self.attack = DEFAULT_ATTACK
+            self.decay = DEFAULT_DECAY
+            self.sustain_time = DEFAULT_SUSTAIN
+            self.sustain_level = DEFAULT_SUSTAIN_LEVEL
+            self.release = DEFAULT_RELEASE
+        
     debug_level = 2
     
     model = Model(SAMPLE_RATE, FREQUENCY, WIDTH, DURATION, STEREO, ATTACK, DECAY, SUSTAIN_TIME, SUSTAIN_LEVEL, RELEASE)
+    
+    voice_params = Voice_Parameters()
     
     model._debug_1("Calculating test waveforms: sine_tone, triangle_tone, sawtooth_tone, square_tone.")
  
@@ -249,6 +283,16 @@ if __name__ == "__main__":
     finish = time.perf_counter()
     model._debug_1("No of samples / tone = " +str(len(sine_tone)))
     model._debug_1("Calculation of 4 tones in seconds = " + str(finish - start))
+    
+    model._debug_1("\nCalculating envelope waveform.")
+    
+    start = time.perf_counter()
+    
+    env = model.change_envelope(voice_params)
+        
+    finish = time.perf_counter()
+    
+    model._debug_1("Envelope calculation in seconds = " + str(finish - start))
            
     model._debug_1("\nDoing mono amplitude modulation")
     
