@@ -42,6 +42,10 @@ The Model class has copies of some parameters that are in the Voice class. This 
 
 The view object reads some parameters like frequency directly from the controller object. Is this bad practice?
 
+Variables called key and semitone often refer to the same data. This is confusing.
+
+The sustain_level parameter is input as a percentage but used as a factor with maximum value 1.0. This can be
+confusing.
 
 ## Notes
 

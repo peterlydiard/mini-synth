@@ -31,28 +31,19 @@ debug_level = 1
 ####################################################################
 
 class Model:
-    def __init__(self, sample_rate, frequency=FREQUENCY, width=WIDTH, max_duration=MAX_DURATION, duration=MAX_DURATION, stereo=STEREO,
-                 attack=ATTACK, decay=DECAY, sustain_time=SUSTAIN_TIME, sustain_level=SUSTAIN_LEVEL, release=RELEASE):
+    def __init__(self, controller, sample_rate, max_duration=MAX_DURATION, duration=MAX_DURATION, stereo=STEREO):
+        self.controller = controller
         self.sample_rate = sample_rate     # Hz
-        self.frequency = frequency         # Hz
         self.max_duration = max_duration   # milliseconds
         self.duration = duration           # milliseconds
         self.stereo = stereo               # Boolean
-        self.attack = attack               # milliseconds
-        self.decay = decay                 # milliseconds
-        self.sustain_time = sustain_time   # milliseconds
-        self.sustain_level = sustain_level # range is 0..100
-        self.release = release             # milliseconds
         self.envelopes = [] 
         self.voices = np.zeros((MAX_VOICES, NUM_KEYS, (int(sample_rate * MAX_DURATION / 1000))), dtype=float)
 
 
     def main(self, max_voices=MAX_VOICES):
-        self.make_voice(0, "Sine")
-        self.make_voice(1, "Triangle")
-        self.make_voice(2, "Sawtooth", 100)
-        self.make_voice(3, "Square", 100)
         for voice_index in range(MAX_VOICES):
+            self.make_voice(voice_index)
             envelope = np.zeros((int(self.sample_rate * MAX_DURATION / 1000)), dtype=float)
             self.envelopes.append(envelope)
         pass
@@ -60,7 +51,6 @@ class Model:
     # Create a unit-amplitude sine wave.
     def _sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
-        self.frequency = frequency
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
         times_msec = np.linspace(0, self.max_duration, int(self.sample_rate * self.max_duration / 1000), False)
         self._debug_2("No. of samples = " + str(len(times_msec)))
@@ -72,7 +62,6 @@ class Model:
 
     # Create a unit-amplitude trianle wave.
     def _triangle_wave(self, frequency):
-        self.frequency = frequency   
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
         ramp = np.linspace(0, (2 * frequency * self.max_duration/1000), int(self.sample_rate * self.max_duration/1000), False)
         # Generate a triangle wave
@@ -83,7 +72,6 @@ class Model:
     # Create a unit-amplitude sawtooth wave with pulse width control.
     def _pwm_sawtooth_wave(self, frequency, width):
         #print("Saw wave freq, width, duration = " + str(frequency) + ", " + str(width)+ ", " + str(duration))
-        self.frequency = frequency
         width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration/1000) + 2 - width/100,
@@ -96,7 +84,6 @@ class Model:
     # Create a unit-amplitude square wave with pulse width control.
     def _pwm_square_wave(self, frequency, width):
         #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
-        self.frequency = frequency
         width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration / 1000) + 2 - width/100,
@@ -138,11 +125,11 @@ class Model:
         
     def change_envelope(self, voice_index, voice):
         self._debug_2("In change_envelope() ")
-        self.attack = voice.attack
-        self.decay = voice.decay
-        self.sustain_time = voice.sustain_time
-        self.sustain_level = voice.sustain_level / 100
-        self.release = voice.release
+        attack = voice.attack
+        decay = voice.decay
+        sustain_time = voice.sustain_time
+        sustain_level = voice.sustain_level / 100
+        release = voice.release
         self.duration = voice.attack + voice.decay + voice.sustain_time + voice.release
         self._debug_2("Envelope duration, ms = " + str(self.duration))
         new_envelope_length = int(self.sample_rate * self.duration/1000)
@@ -152,28 +139,28 @@ class Model:
         times_msec = np.linspace(0, self.duration, int(new_envelope_length), False)
         self._debug_2("No. of samples = " + str(len(times_msec)))
             
-        attack_level_change = 1.6 * times_msec[1] / self.attack  
-        decay_level_change = 1.6 * times_msec[1] / self.decay 
-        release_level_change = 1.6 * times_msec[1] / self.release
+        attack_level_change = 1.6 * times_msec[1] / attack  
+        decay_level_change = 1.6 * times_msec[1] / decay 
+        release_level_change = 1.6 * times_msec[1] / release
         self._debug_2("Attack level change = " + str(attack_level_change))
         self._debug_2("Decay level change = " + str(decay_level_change))
-        self._debug_2("Release level change = " + str( release_level_change))
+        self._debug_2("Release level change = " + str(release_level_change))
         self._debug_2("Time step, milliseconds = " + str(times_msec[1]))
                 
         level = 0.0
         for i in range(len(times_msec)):
-            if times_msec[i] <= self.attack:
+            if times_msec[i] <= attack:
                 level += attack_level_change * (1.24 - level)
                 # print(str(i) + " Attack")
-            elif times_msec[i] <= self.attack + self.decay:
+            elif times_msec[i] <= attack + decay:
                 #print(str(i) + " Decay")
-                level -= decay_level_change * (level + 0.1 - self.sustain_level)
-                if level < self.sustain_level:
-                    level = self.sustain_level
-            elif times_msec[i] < self.attack + self.decay + self.sustain_time:
+                level -= decay_level_change * (level + 0.1 - sustain_level)
+                if level < sustain_level:
+                    level = sustain_level
+            elif times_msec[i] < attack + decay + sustain_time:
                 #print(str(i) + " Sustain")
-                level = self.sustain_level
-            elif times_msec[i] < self.attack + self.decay + self.sustain_time + self.release:
+                level = sustain_level
+            elif times_msec[i] < attack + decay + sustain_time + release:
                 #print(str(i) + " Release")
                 if level > 0:
                     level -= release_level_change * (level + 0.1)
@@ -191,11 +178,13 @@ class Model:
         return new_envelope
     
     
-    def make_voice(self, voice_index, waveform, width=100):
+    def make_voice(self, voice_index):
         self._debug_2("In make_voice() ")
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
+        waveform = self.controller.voices[voice_index].waveform
+        width = self.controller.voices[voice_index].width
         for semitone in range(NUM_KEYS):
             frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
             if waveform == "Sine":
@@ -232,7 +221,7 @@ class Model:
 
 #------------------------- Module Test Funcctions -------------------------
 if __name__ == "__main__":
-    
+
     import time
     
     SAMPLE_RATE = 44100 # Hz
@@ -250,6 +239,8 @@ if __name__ == "__main__":
     NUM_OCTAVES = 3
     NUM_KEYS = (12 * NUM_OCTAVES) + 1
     LOWEST_TONE = 110
+    
+    MAX_VOICES = 12
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
     DEFAULT_DECAY = 20
@@ -273,9 +264,28 @@ if __name__ == "__main__":
             self.sustain_level = DEFAULT_SUSTAIN_LEVEL
             self.release = DEFAULT_RELEASE
         
-    debug_level = 2
-    
-    model = Model(SAMPLE_RATE, FREQUENCY, WIDTH, DURATION, STEREO, ATTACK, DECAY, SUSTAIN_TIME, SUSTAIN_LEVEL, RELEASE)
+    class TestController:
+        def __init__(self):
+            self.sample_rate = SAMPLE_RATE
+            self.frequency = DEFAULT_FREQUENCY
+            self.num_voices = 1
+            self.voices = []
+            self.voice_index = 0
+            self.model = Model(self, SAMPLE_RATE)
+        
+        def main(self):
+            self.model._debug_2("In main of test controller")
+            for voice_index in range(MAX_VOICES):
+                voice_params = Voice_Parameters()
+                self.voices.append(voice_params)
+            self.model.main()
+
+          
+    debug_level = 2       
+    tc = TestController()
+    tc.main()
+      
+    model = Model(tc, SAMPLE_RATE)
     
     voice_params = Voice_Parameters()
     
@@ -323,7 +333,7 @@ if __name__ == "__main__":
     model._debug_1("\nDoing make_voice()")
     
     start = time.perf_counter()    
-    model.make_voice(0, "Sine")
+    model.make_voice(0)
     finish = time.perf_counter()
     
     model._debug_1("Make 1 voice in seconds = " + str(finish - start))

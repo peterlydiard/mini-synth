@@ -51,10 +51,11 @@ class Controller:
         self.sample_rate = SAMPLE_RATE
         self.frequency = DEFAULT_FREQUENCY
         self.num_voices = 1
+        self.current_key = 12
         self.voices = []
         self.voice_index = 0
         self.view = View(self)
-        self.model = Model(SAMPLE_RATE)
+        self.model = Model(self, SAMPLE_RATE)
         
     def main(self):
         self._debug_2("In main of controller")
@@ -81,10 +82,8 @@ class Controller:
     def on_request_waveform(self, waveform):
         self._debug_2("In on_request_waveform: " + waveform)
         self.voices[self.voice_index].waveform = waveform
-        width = self.voices[self.voice_index].width
-        self.model.make_voice(self.voice_index, waveform, width)
-        key = 12
-        tone = self.model.fetch_tone(self.voice_index, key)
+        self.model.make_voice(self.voice_index)
+        tone = self.model.fetch_tone(self.voice_index, self.current_key)
         note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
             self.view.play_sound(note)        
@@ -92,6 +91,7 @@ class Controller:
     def on_request_note(self, key, voice_index = -1):
         self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
         # Calculate frequency to display
+        self.current_key = key
         self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
         if voice_index < 0: # If no voice_index given, use last stored value.
             voice_index = self.voice_index
@@ -109,7 +109,7 @@ class Controller:
         if voice.waveform == "Sawtooth" or voice.waveform == "Square":
             self._debug_2("Set width to " + str(width))
             self.voices[self.voice_index].width = float(width)
-            self.model.make_voice(self.voice_index, voice.waveform, width)
+            self.model.make_voice(self.voice_index)
             key = 12
             tone = self.model.fetch_tone(self.voice_index, key)
             note = self.model.apply_envelope(self.voice_index, tone)    
