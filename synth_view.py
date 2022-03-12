@@ -40,6 +40,8 @@ MAX_ATTACK = 100
 MAX_DECAY = 100
 MAX_SUSTAIN = 400
 MAX_RELEASE = 100
+MAX_TREMOLO_RATE = 100
+MAX_TREMOLO_DEPTH = 100
 MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 
 # ------------------------------
@@ -74,7 +76,7 @@ class View:
         pygame.mixer.init()
         pygame.init()
 
-        self.app = App("Mini-synth", width = 940)
+        self.app = App("Mini-synth", width = 940, height = 570)
         
         self.panel_0 = Box(self.app, layout="grid")
         self.shaper_panel = Box(self.panel_0, layout="grid", grid=[0,0])
@@ -141,6 +143,8 @@ class View:
         else:
             self.width_label.hide()
             self.width_slider.hide()
+        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
         
     def _update_combo(self, combo, option):
         self._debug_2("In _update_combo()")
@@ -245,7 +249,17 @@ class View:
                                      width=200, command=self.handle_set_release)
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
-    
+        Text(self.shaper_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_slider = Slider(self.shaper_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
+                                     width=200, command=self.handle_set_tremolo_rate)
+        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+        
+        Text(self.shaper_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_slider = Slider(self.shaper_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
+                                     width=200, command=self.handle_set_tremolo_depth)
+        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+            
+   
     def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
         self._debug_2("In _draw_keyboard()")
         self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
@@ -369,6 +383,14 @@ class View:
         self._debug_2("In handle_set_release()")
         self.controller.on_request_release(int(value))
         
+    def handle_set_tremolo_rate(self, value):
+        self._debug_2("In handle_set_tremolo_rate()")
+        self.controller.on_request_tremolo_rate(int(value))
+        
+    def handle_set_tremolo_depth(self, value):
+        self._debug_2("In handle_set_tremolo_depth()")
+        self.controller.on_request_tremolo_depth(int(value))
+        
     def handle_request_play(self):
         self._debug_2("In handle_request_play()")
         self.controller.on_request_play()
@@ -429,7 +451,11 @@ if __name__ == "__main__":
             self.sustain_time = DEFAULT_SUSTAIN
             self.sustain_level = DEFAULT_SUSTAIN_LEVEL
             self.release = DEFAULT_RELEASE
-            
+            self.vibrato_rate = 0
+            self.vibrato_depth = 0
+            self.tremolo_rate = 0
+            self.tremolo_depth = 0
+        
     class TestController:
         def __init__(self):
             self.sample_rate = SAMPLE_RATE
@@ -475,7 +501,13 @@ if __name__ == "__main__":
             
         def on_request_release(self, value):
             self.view._debug_2("Set release to " + str(value))
-                
+            
+        def on_request_tremolo_rate(self, value):
+            self.view._debug_2("Set tremolo_Rate to " + str(value))
+        
+        def on_request_tremolo_depth(self, value):
+            self.view._debug_2("Set tremolo_depth to " + str(value))
+           
         def on_request_play(self):
             self.view._debug_2("Play Sound requested")
             

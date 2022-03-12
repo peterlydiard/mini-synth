@@ -38,8 +38,8 @@ class Voice_Parameters:
         self.width = 100
         self.vibrato_rate = 0
         self.vibrato_depth = 0
-        self.tremelo_rate = 0
-        self.tremelo_depth = 0
+        self.tremolo_rate = 0
+        self.tremolo_depth = 0
         self.attack = DEFAULT_ATTACK
         self.decay = DEFAULT_DECAY
         self.sustain_time = DEFAULT_SUSTAIN
@@ -142,6 +142,17 @@ class Controller:
         self._debug_2("In on_request_release: " + str(value))
         self.voices[self.voice_index].release = int(value)
         self._change_envelope()
+        
+    def on_request_tremolo_rate(self, value):
+        self._debug_2("In on_request_tremolo_rate: " + str(value))
+        self.voices[self.voice_index].tremolo_rate = int(value)
+        self._change_envelope()
+        
+    def on_request_tremolo_depth(self, value):
+        self._debug_2("In on_request_tremolo_depth: " + str(value))
+        self.voices[self.voice_index].tremolo_depth = int(value)
+        self._change_envelope()
+        
                     
     def on_request_play(self):
         self._debug_2("In on_request_play().")
@@ -199,10 +210,10 @@ class Controller:
             values.append(int(self.voices[vi].vibrato_rate))
             names.append(name_prefix + "vibrato_depth")
             values.append(int(self.voices[vi].vibrato_depth))
-            names.append(name_prefix + "tremelo_rate")
-            values.append(int(self.voices[vi].tremelo_rate))
-            names.append(name_prefix + "tremelo_depth")
-            values.append(int(self.voices[vi].tremelo_depth))
+            names.append(name_prefix + "tremolo_rate")
+            values.append(int(self.voices[vi].tremolo_rate))
+            names.append(name_prefix + "tremolo_depth")
+            values.append(int(self.voices[vi].tremolo_depth))
             names.append(name_prefix + "attack")
             values.append(int(self.voices[vi].attack))
             names.append(name_prefix + "decay")
@@ -242,10 +253,10 @@ class Controller:
                         self.voices[vi].vibrato_rate = int(values[i])
                     elif names[i] == name_prefix + "vibrato_depth":
                         self.voices[vi].vibrato_depth = int(values[i])
-                    elif names[i] == name_prefix + "tremelo_rate":
-                        self.voices[vi].tremelo_rate = int(values[i])
-                    elif names[i] == name_prefix + "tremelo_depth":
-                        self.voices[vi].tremelo_depth = int(values[i])
+                    elif names[i] == name_prefix + "tremolo_rate":
+                        self.voices[vi].tremolo_rate = int(values[i])
+                    elif names[i] == name_prefix + "tremolo_depth":
+                        self.voices[vi].tremolo_depth = int(values[i])
                     elif names[i] == name_prefix + "attack":
                         self.voices[vi].attack = int(values[i])
                     elif names[i] == name_prefix + "decay":
