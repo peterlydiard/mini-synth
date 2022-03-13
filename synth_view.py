@@ -42,6 +42,8 @@ MAX_SUSTAIN = 400
 MAX_RELEASE = 100
 MAX_TREMOLO_RATE = 100
 MAX_TREMOLO_DEPTH = 100
+MAX_VIBRATO_RATE = 100
+MAX_VIBRATO_DEPTH = 100
 MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 
 # ------------------------------
@@ -76,11 +78,11 @@ class View:
         pygame.mixer.init()
         pygame.init()
 
-        self.app = App("Mini-synth", width = 940, height = 570)
+        self.app = App("Mini-synth", width = 940, height = 640)
         
         self.panel_0 = Box(self.app, layout="grid")
-        self.shaper_panel = Box(self.panel_0, layout="grid", grid=[0,0])
-        self._shaper_controls()
+        self.settings_panel = Box(self.panel_0, layout="grid", grid=[0,0])
+        self._settings_controls()
         self.scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
         
         self.panel_1 = Box(self.app, layout="grid", border=10)
@@ -222,42 +224,52 @@ class View:
     #---------------------- Helper Functions --------------------
     # (intended only for use inside this module)
 
-    def _shaper_controls(self):
+    def _settings_controls(self):
         self._debug_2("In _shaper_controls()")
-        Text(self.shaper_panel, grid=[0,0], text="Attack time, ms: ")
-        self.attack_slider = Slider(self.shaper_panel, grid=[1,0], start=1, end=MAX_ATTACK,
+        Text(self.settings_panel, grid=[0,0], text="Attack time, ms: ")
+        self.attack_slider = Slider(self.settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
                                     width=200, command=self.handle_set_attack)
         self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
         
-        Text(self.shaper_panel, grid=[0,1], text="Decay time, ms:")
-        self.decay_slider = Slider(self.shaper_panel, grid=[1,1], start=1, end=MAX_DECAY,
+        Text(self.settings_panel, grid=[0,1], text="Decay time, ms:")
+        self.decay_slider = Slider(self.settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
                                    width=200, command=self.handle_set_decay)
         self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
         
-        Text(self.shaper_panel, grid=[0,2], text="Sustain time, ms: ")
-        self.sustain_slider = Slider(self.shaper_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+        Text(self.settings_panel, grid=[0,2], text="Sustain time, ms: ")
+        self.sustain_slider = Slider(self.settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
                                      width=200, command=self.handle_set_sustain)
         self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
-        
-        Text(self.shaper_panel, grid=[0,3], text="Sustain level, %: ")
-        self.sustain_level_slider = Slider(self.shaper_panel, grid=[1,3], start=10, end=100,
+
+        Text(self.settings_panel, grid=[0,3], text="Sustain level, %: ")
+        self.sustain_level_slider = Slider(self.settings_panel, grid=[1,3], start=10, end=100,
                                            width=200, command=self.handle_set_sustain_level)
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         
-        Text(self.shaper_panel, grid=[0,4], text="Release time, ms: ")
-        self.release_slider = Slider(self.shaper_panel, grid=[1,4], start=1, end=MAX_RELEASE,
+        Text(self.settings_panel, grid=[0,4], text="Release time, ms: ")
+        self.release_slider = Slider(self.settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
                                      width=200, command=self.handle_set_release)
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
-        Text(self.shaper_panel, grid=[0,5], text="Tremolo rate, Hz: ")
-        self.tremolo_rate_slider = Slider(self.shaper_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
+        Text(self.settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_slider = Slider(self.settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
                                      width=200, command=self.handle_set_tremolo_rate)
         self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
         
-        Text(self.shaper_panel, grid=[0,6], text="Tremolo depth, %: ")
-        self.tremolo_depth_slider = Slider(self.shaper_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
+        Text(self.settings_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_slider = Slider(self.settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
                                      width=200, command=self.handle_set_tremolo_depth)
         self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+        
+        Text(self.settings_panel, grid=[0,7], text="Vibrato rate, Hz: ")
+        self.vibrato_rate_slider = Slider(self.settings_panel, grid=[1,7], start=0, end=MAX_VIBRATO_RATE,
+                                     width=200, command=self.handle_set_vibrato_rate)
+        self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
+        
+        Text(self.settings_panel, grid=[0,8], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = Slider(self.settings_panel, grid=[1,8], start=0, end=MAX_VIBRATO_DEPTH,
+                                     width=200, command=self.handle_set_vibrato_depth)
+        self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
             
    
     def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
@@ -391,6 +403,14 @@ class View:
         self._debug_2("In handle_set_tremolo_depth()")
         self.controller.on_request_tremolo_depth(int(value))
         
+    def handle_set_vibrato_rate(self, value):
+        self._debug_2("In handle_set_vibrato_rate()")
+        self.controller.on_request_vibrato_rate(int(value))
+        
+    def handle_set_vibrato_depth(self, value):
+        self._debug_2("In handle_set_vibrato_depth()")
+        self.controller.on_request_vibrato_depth(int(value))
+        
     def handle_request_play(self):
         self._debug_2("In handle_request_play()")
         self.controller.on_request_play()
@@ -507,6 +527,12 @@ if __name__ == "__main__":
         
         def on_request_tremolo_depth(self, value):
             self.view._debug_2("Set tremolo_depth to " + str(value))
+            
+        def on_request_vibrato_rate(self, value):
+            self.view._debug_2("Set vibrato_Rate to " + str(value))
+        
+        def on_request_vibrato_depth(self, value):
+            self.view._debug_2("Set vibrato_depth to " + str(value))
            
         def on_request_play(self):
             self.view._debug_2("Play Sound requested")

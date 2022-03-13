@@ -142,7 +142,7 @@ class Controller:
         self._debug_2("In on_request_release: " + str(value))
         self.voices[self.voice_index].release = int(value)
         self._change_envelope()
-        
+            
     def on_request_tremolo_rate(self, value):
         self._debug_2("In on_request_tremolo_rate: " + str(value))
         self.voices[self.voice_index].tremolo_rate = int(value)
@@ -152,6 +152,16 @@ class Controller:
         self._debug_2("In on_request_tremolo_depth: " + str(value))
         self.voices[self.voice_index].tremolo_depth = int(value)
         self._change_envelope()
+        
+    def on_request_vibrato_rate(self, value):
+        self._debug_2("In on_request_vibrato_rate: " + str(value))
+        self.voices[self.voice_index].vibrato_rate = int(value)
+        self.model.make_voice(self.voice_index)
+        
+    def on_request_vibrato_depth(self, value):
+        self._debug_2("In on_request_vibrato_depth: " + str(value))
+        self.voices[self.voice_index].vibrato_depth = int(value)
+        self.model.make_voice(self.voice_index)
         
                     
     def on_request_play(self):

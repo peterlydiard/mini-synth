@@ -54,9 +54,18 @@ class Model:
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
         times_msec = np.linspace(0, self.max_duration, int(self.sample_rate * self.max_duration / 1000), False)
         self._debug_2("No. of samples = " + str(len(times_msec)))
+        # Generate a sine wave for the vibrato signal
+        time_step = times_msec[1]
+        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
+        vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * times_msec)
+        
+        times_with_vibrato = times_msec + vibrato_tone
+        
         # Generate a sine wave
         radians_per_msec = 2 * np.pi * frequency / 1000
-        tone = np.sin(radians_per_msec * times_msec)
+        tone = np.sin(radians_per_msec * times_with_vibrato)
         return tone
 
 
@@ -64,8 +73,15 @@ class Model:
     def _triangle_wave(self, frequency):
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
         ramp = np.linspace(0, (2 * frequency * self.max_duration/1000), int(self.sample_rate * self.max_duration/1000), False)
+        # Generate a sine wave for the vibrato signal
+        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
+        time_step = ramp[1]
+        vibrato_tone = 2 * vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp)
         # Generate a triangle wave
-        tone = abs(((2 * ramp + 3 ) % 4.0) - 2) - 1
+        ramp_with_vibrato = ramp + vibrato_tone
+        tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1
         return tone
 
     
@@ -76,8 +92,16 @@ class Model:
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration/1000) + 2 - width/100,
                            int(self.sample_rate * self.max_duration / 1000), False)
+        
+        # Generate a sine wave for the vibrato signal
+        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
+        time_step = ramp[1]
+        vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
+        
         # Generate a sawtooth wave
-        tone = np.clip((100/width) * ((ramp % 2.0) + width/100 - 2.0), -1.0, 1.0)
+        tone = np.clip((100/width) * (((ramp + vibrato_tone) % 2.0) + width/100 - 2.0), -1.0, 1.0)
         return tone
     
     
@@ -88,8 +112,16 @@ class Model:
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration / 1000) + 2 - width/100,
                            int(self.sample_rate * self.max_duration / 1000), False)
+
+        # Generate a sine wave for the vibrato signal
+        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
+        time_step = ramp[1]
+        vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
+        
         # Generate a square wave, clip sine to avoid using scipy library.
-        tone = np.clip(1000 * ((ramp % 2.0) + (width/100) - 2.0), -1.0, 1.0)
+        tone = np.clip(1000 * (((ramp + vibrato_tone) % 2.0) + (width/100) - 2.0), -1.0, 1.0)
         return tone
     
     
