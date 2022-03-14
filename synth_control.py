@@ -147,28 +147,37 @@ class Controller:
         self._debug_2("In on_request_tremolo_rate: " + str(value))
         self.voices[self.voice_index].tremolo_rate = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_tremolo_depth(self, value):
         self._debug_2("In on_request_tremolo_depth: " + str(value))
         self.voices[self.voice_index].tremolo_depth = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_vibrato_rate(self, value):
         self._debug_2("In on_request_vibrato_rate: " + str(value))
         self.voices[self.voice_index].vibrato_rate = int(value)
-        self.model.make_voice(self.voice_index)
+        self._make_voice_and_play_note()
         
     def on_request_vibrato_depth(self, value):
         self._debug_2("In on_request_vibrato_depth: " + str(value))
         self.voices[self.voice_index].vibrato_depth = int(value)
-        self.model.make_voice(self.voice_index)
+        self._make_voice_and_play_note()
         
-                    
+    def _make_voice_and_play_note(self):
+        self.model.make_voice(self.voice_index)
+        self._play_current_note()
+            
+    def _play_current_note(self):
+        tone = self.model.fetch_tone(self.voice_index, self.current_key)
+        note = self.model.apply_envelope(self.voice_index, tone) 
+        if not note is None:
+            self.view.play_sound(note)        
+            
     def on_request_play(self):
         self._debug_2("In on_request_play().")
-        note = self._change_note(self.voice_index)    
-        if not note is None:
-            self.view.play_sound(note)
+        self._play_current_note()
             
     def on_request_sequence(self):
         self._debug_2("In on_request_sequence().")
@@ -282,23 +291,6 @@ class Controller:
     # ------------------------------
     # Local Helper Functions
     # ------------------------------
-
-    def _change_note(self, voice_index):
-        voice = self.voices[voice_index]
-        if voice.waveform == "Sine":
-            tone = self.model._sine_wave(float(self.frequency))
-        elif voice.waveform == "Triangle":
-            tone = self.model._triangle_wave(float(self.frequency))
-        elif voice.waveform == "Sawtooth":
-            tone = self.model._pwm_sawtooth_wave(float(self.frequency), voice.width)
-        elif voice.waveform == "Square":
-            tone = self.model._pwm_square_wave(float(self.frequency), voice.width)
-        else:
-            self._debug_1("Warning, waveform unknown: " + str(voice.waveform))
-            tone = None
-        
-        note = self.model.apply_envelope(voice_index, tone)
-        return note
     
     def _change_envelope(self):
         new_envelope = self.model.change_envelope(self.voice_index, self.voices[self.voice_index])
