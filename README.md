@@ -20,7 +20,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 5. Storage and recall of synth settings (voices and patches). (Done for voices.)
 
-6. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms.
+6. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms. (Under way)
 
 7. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 
@@ -40,12 +40,27 @@ If you edit the online version of this file, it may conflict with other changes 
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
-The view object reads some parameters like frequency directly from the controller object. Is this bad practice?
+The view and model objects read voice parameters directly from the controller object. Is this bad practice?
 
 Variables called key and semitone often refer to the same data. This is confusing.
 
 The sustain_level parameter is input as a percentage but used as a factor with maximum value 1.0. This can be
 confusing.
+
+The waveform overloads the scopes amplitude axis when tremolo is added. Seen on envelope and note diplays.
+
+The tremolo operates at a fixed rate. This may be better if proportional to the tone frequency.
+
+Dual display of tone and evelope would be better.
+
+Different envelope shapers may be used to control the VCF and VCA.
+
+Perceived loudness of short notes is said to less than notes longer than a duration that reduces with increasing pitch.
+
+Real instruments have inharmonicity, where the higher partials are not exact multiples of the fundamental.
+
+Some instruments, e.g. oboe have lower levels of the fundamental than the higher harmonics / partials.
+
 
 ## Notes
 
