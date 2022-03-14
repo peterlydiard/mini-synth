@@ -201,11 +201,12 @@ class View:
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
         sub_sampling_factor = 9 # found by trial and error
         scope_trace = np.zeros(int(num_points), dtype = float)
+        max_env = max(envelope)
         for i in range(len(envelope)):
-            scope_trace[i] += envelope[i]
+            scope_trace[i] += envelope[i] / max_env
         #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
         scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
-        scale_y = (self.scope.height - 5)
+        scale_y = (self.scope.height - 5) 
         self._debug_2("scale_y = " + str(scale_y))
         for i in range(num_points // sub_sampling_factor):
             #self._debug_2(envelope[int(i * sub_sampling_factor)])
@@ -292,6 +293,7 @@ class View:
         self._debug_2("In _plot_sound()")
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
+        self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
         
         self.scope.clear()
         self.scope.bg = "dark gray"
@@ -306,10 +308,11 @@ class View:
         previous_y = origin_y
         sub_sampling_factor = 9
         #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.scope.width)
-        num_points = int(min(800, len(left_channel) / sub_sampling_factor))
+        num_points = int(len(left_channel) / sub_sampling_factor) - x_offset
         self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
         scale_x = (self.scope.width - 5)/ num_points
-        scale_y = (self.scope.height - 5)/ 2.0
+        max_y_range = max(left_channel) - min(left_channel)
+        scale_y = (self.scope.height - 5)/ max_y_range
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
             plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
