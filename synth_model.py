@@ -1,13 +1,9 @@
-#import FFT
+
 import math
 import string
-import copy
-# import pylab
-# import numpy
-import numpy as np
-# import simpleaudio as sa
-#from scipy import signal
+#import copy
 
+import numpy as np
 
 ######################### Global variables #########################
 
