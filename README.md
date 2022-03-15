@@ -26,6 +26,8 @@ If you edit the online version of this file, it may conflict with other changes 
 
 8. Low frequency oscillators for modulating other parameters.
 
+9. Separate envelope shapers for VCF and VCA control.
+
 9. White and pink noise generators, random pitch and amplitude modulation.
 
 10. Ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
@@ -40,6 +42,10 @@ If you edit the online version of this file, it may conflict with other changes 
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
+The function to rebuild the voices for all tones after a parameter change is quite slow and could perhaps
+be done more on a just-in-time basis. e.g. just rebuild the current tone and do the others while the sample
+tone is being played.
+
 The view and model objects read voice parameters directly from the controller object. Is this bad practice?
 
 Variables called key and semitone often refer to the same data. This is confusing.
@@ -47,13 +53,11 @@ Variables called key and semitone often refer to the same data. This is confusin
 The sustain_level parameter is input as a percentage but used as a factor with maximum value 1.0. This can be
 confusing.
 
-The waveform overloads the scopes amplitude axis when tremolo is added. Seen on envelope and note diplays.
-
-The tremolo operates at a fixed rate. This may be better if proportional to the tone frequency.
-
 Dual display of tone and evelope would be better.
 
-Different envelope shapers may be used to control the VCF and VCA.
+Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
+
+The range of the vibrato controls have been arbitrarily set and may not be optimal.
 
 Perceived loudness of short notes is said to less than notes longer than a duration that reduces with increasing pitch.
 

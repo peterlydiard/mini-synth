@@ -262,7 +262,7 @@ class View:
                                      width=200, command=self.handle_set_tremolo_depth)
         self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
         
-        Text(self.settings_panel, grid=[0,7], text="Vibrato rate, Hz: ")
+        Text(self.settings_panel, grid=[0,7], text="Vibrato rate, %: ")
         self.vibrato_rate_slider = Slider(self.settings_panel, grid=[1,7], start=0, end=MAX_VIBRATO_RATE,
                                      width=200, command=self.handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
@@ -311,7 +311,10 @@ class View:
         num_points = int(len(left_channel) / sub_sampling_factor) - x_offset
         self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
         scale_x = (self.scope.width - 5)/ num_points
-        max_y_range = max(left_channel) - min(left_channel)
+        max_y = max(left_channel)
+        min_y = min(left_channel)
+        self._debug_2("Audio waveform (min, max) = " + str(min_y) + ", " + str(max_y) + ")")
+        max_y_range = max_y - min_y
         scale_y = (self.scope.height - 5)/ max_y_range
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
