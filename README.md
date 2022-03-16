@@ -42,10 +42,6 @@ If you edit the online version of this file, it may conflict with other changes 
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
-The function to rebuild the voices for all tones after a parameter change is quite slow and could perhaps
-be done more on a just-in-time basis. e.g. just rebuild the current tone and do the others while the sample
-tone is being played.
-
 The view and model objects read voice parameters directly from the controller object. Is this bad practice?
 
 Variables called key and semitone often refer to the same data. This is confusing.
@@ -57,7 +53,8 @@ Dual display of tone and evelope would be better.
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
-The range of the vibrato controls have been arbitrarily set and may not be optimal.
+The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
+into undisplayed settings.
 
 Perceived loudness of short notes is said to less than notes longer than a duration that reduces with increasing pitch.
 

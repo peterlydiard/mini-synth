@@ -214,27 +214,45 @@ class Model:
         self.envelopes.insert(voice_index, np.exp2(new_envelope) - 1)
         return new_envelope
     
-    
+    # Mark all the tones for this voice as obsolete. Obsolete tones should be remade before being played.
+    def scratch_voice(self, voice_index):
+        self._debug_2("In scratch_voice() ")
+        if voice_index >= MAX_VOICES:
+            self._debug_1("ERROR: invalid voice number in scratch_voice() = " + str(voice_index))
+            return
+        for semitone in range(NUM_KEYS):
+            self.voices[voice_index, semitone, 0] = -5 # Set first sample to an invalid value
+        
     def make_voice(self, voice_index):
         self._debug_2("In make_voice() ")
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
+        for semitone in range(NUM_KEYS):
+            self.make_tone(voice_index, semitone)         
+            
+    def make_tone(self, voice_index, semitone):
+        self._debug_2("In make_tone() ")
+        if voice_index >= MAX_VOICES:
+            self._debug_1("ERROR: invalid voice number in make_tone() = " + str(voice_index))
+            return
+        if semitone >= NUM_KEYS:
+            self._debug_1("ERROR: invalid semitone in make_tone() = " + str(semitone))
+            return
+        frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
         waveform = self.controller.voices[voice_index].waveform
         width = self.controller.voices[voice_index].width
-        for semitone in range(NUM_KEYS):
-            frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
-            if waveform == "Sine":
-                self.voices[voice_index, semitone] = self._sine_wave(frequency)
-            elif waveform == "Triangle":
-                self.voices[voice_index, semitone] = self._triangle_wave(frequency)
-            elif waveform == "Sawtooth":
-                self.voices[voice_index, semitone] = self._pwm_sawtooth_wave(frequency, width)
-            elif waveform == "Square":
-                self.voices[voice_index, semitone] = self._pwm_square_wave(frequency, width)
-            else:
-                self._debug_1("ERROR: invalid waveform in make_voice() = " + str(waveform))
-                
+        if waveform == "Sine":
+            self.voices[voice_index, semitone] = self._sine_wave(frequency)
+        elif waveform == "Triangle":
+            self.voices[voice_index, semitone] = self._triangle_wave(frequency)
+        elif waveform == "Sawtooth":
+            self.voices[voice_index, semitone] = self._pwm_sawtooth_wave(frequency, width)
+        elif waveform == "Square":
+            self.voices[voice_index, semitone] = self._pwm_square_wave(frequency, width)
+        else:
+            self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
+                           
     def fetch_tone(self, voice_index, semitone):
         self._debug_2("In fetch_tone()")
         if voice_index >= MAX_VOICES:
@@ -244,6 +262,10 @@ class Model:
             self._debug_1("ERROR: invalid semitone number in fetch_tone() = " + str(semitone))
             return None
         tone = self.voices[voice_index, semitone]
+        # Check if tone needs to be regenerated
+        if tone[0] < -2:
+            self.make_tone(voice_index, semitone)
+            tone = self.voices[voice_index, semitone]
         return tone        
                 
     def _debug_1(self, message):

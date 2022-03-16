@@ -67,7 +67,6 @@ class Controller:
         self.model.main()
         self.view.main() # This function does not return control here.
         
-
     def on_request_voice(self, voice):
         self._debug_2("In on_request_voice: " + str(voice))
         vi = int(voice)
@@ -78,16 +77,7 @@ class Controller:
             self.view.show_new_settings()
         else:
             self._debug_1("ERROR: unexpected voice index = " + str(voice))
-        
-    def on_request_waveform(self, waveform):
-        self._debug_2("In on_request_waveform: " + waveform)
-        self.voices[self.voice_index].waveform = waveform
-        self.model.make_voice(self.voice_index)
-        tone = self.model.fetch_tone(self.voice_index, self.current_key)
-        note = self.model.apply_envelope(self.voice_index, tone) 
-        if not note is None:
-            self.view.play_sound(note)        
-        
+
     def on_request_note(self, key, voice_index = -1):
         self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
         # Calculate frequency to display
@@ -95,26 +85,22 @@ class Controller:
         self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
         if voice_index < 0: # If no voice_index given, use last stored value.
             voice_index = self.voice_index
-        self._debug_2("Getting note for voice, key " + str(voice_index) + ", " + str(key))
-        tone = self.model.fetch_tone(voice_index, key)
-        note = self.model.apply_envelope(self.voice_index, tone)
-        #note = self._change_note(voice_index)
-        if not note is None:
-            self.view.play_sound(note)
-            
-                       
+        self._play_current_note()            
+        
+    def on_request_waveform(self, waveform):
+        self._debug_2("In on_request_waveform: " + waveform)
+        self.voices[self.voice_index].waveform = waveform
+        self.model.scratch_voice(self.voice_index)
+        self._play_current_note()
+        
     def on_request_width(self, width):
         self._debug_2("In on_request_width: " + str(width))
         voice = self.voices[self.voice_index]
         if voice.waveform == "Sawtooth" or voice.waveform == "Square":
             self._debug_2("Set width to " + str(width))
             self.voices[self.voice_index].width = float(width)
-            self.model.make_voice(self.voice_index)
-            key = 12
-            tone = self.model.fetch_tone(self.voice_index, key)
-            note = self.model.apply_envelope(self.voice_index, tone)    
-            if not note is None:
-                self.view.play_sound(note)
+            self.model.scratch_voice(self.voice_index)
+            self._play_current_note()
         else:
             self._debug_1("Width of this waveform is fixed.")
 
@@ -158,17 +144,15 @@ class Controller:
     def on_request_vibrato_rate(self, value):
         self._debug_2("In on_request_vibrato_rate: " + str(value))
         self.voices[self.voice_index].vibrato_rate = int(value)
-        self._make_voice_and_play_note()
+        self.model.scratch_voice(self.voice_index)
+        self._play_current_note()
         
     def on_request_vibrato_depth(self, value):
         self._debug_2("In on_request_vibrato_depth: " + str(value))
         self.voices[self.voice_index].vibrato_depth = int(value)
-        self._make_voice_and_play_note()
-        
-    def _make_voice_and_play_note(self):
-        self.model.make_voice(self.voice_index)
+        self.model.scratch_voice(self.voice_index)
         self._play_current_note()
-            
+                   
     def _play_current_note(self):
         tone = self.model.fetch_tone(self.voice_index, self.current_key)
         note = self.model.apply_envelope(self.voice_index, tone) 
@@ -185,18 +169,19 @@ class Controller:
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
         next_time = start + 0.100
+        time_asleep = 0
         note = 0
         while note < 100:
             self.on_request_note(note % NUM_KEYS, self.voice_index)
             now = time.perf_counter()
-            # self._debug_1("Timer now = " + str(now))
-            time.sleep(max(0, next_time - now))
-            #time.sleep(0.15)
+            sleep_time = next_time - now
+            time_asleep += sleep_time
+            time.sleep(max(0, sleep_time))
             next_time += 0.100
             note += 1
         finish = time.perf_counter()
         self._debug_1("100 notes in seconds = " + str(finish - start))
-  
+        self._debug_1("Time asleep in seconds = " + str(time_asleep))
         
     def on_request_shutdown(self):
         self._debug_2("Shutdown requested")
