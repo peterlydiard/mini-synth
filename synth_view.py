@@ -78,40 +78,27 @@ class View:
         pygame.mixer.init()
         pygame.init()
 
-        self.app = App("Mini-synth", width = 940, height = 640)
+        self.app = App("Mini-synth", width = 940, height = 710)
         
         self.panel_0 = Box(self.app, layout="grid")
-        self.settings_panel = Box(self.panel_0, layout="grid", grid=[0,0])
-        self._settings_controls()
-        self.scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
+        
+        self.tone_settings_panel = Box(self.panel_0, layout="grid", grid=[0,0])
+        self._tone_settings_controls()
+        
+        self.envelope_settings_panel = Box(self.panel_0, layout="grid", grid=[0,1])
+        self._envelope_settings_controls()
+        
+        self.audio_scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
+        self.control_scope = Drawing(self.panel_0, grid=[1,1], width=500, height=220)
         
         self.panel_1 = Box(self.app, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
-                
-        self.voice_combo = Combo(self.panel_1, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
-                                     height="fill", command=self.handle_set_voice)
-                
-        self.waveform_combo = Combo(self.panel_1, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
-                                     height="fill", command=self.handle_set_waveform)
-
-        self.play_button = PushButton(self.panel_1, grid=[2,0], text="Play", command=self.handle_request_play)
-
-        self.sequence_button = PushButton(self.panel_1, grid=[3,0], text="Sequence", command=self.handle_request_sequence)
-
-        self.panel_2 = Box(self.app, layout="grid", border=10)
-        self.panel_2.set_border(thickness=5, color=self.app.bg)
-        
-        freq_label = Text(self.panel_2, grid=[0,1], text="Tone frequency, Hz: ")
-        self.freq_display = Text(self.panel_2, grid=[1,1], text=str(self.controller.frequency))
-        
-        self.panel_3 = Box(self.app, layout="grid", border=10)
-        self.panel_3.set_border(thickness=10, color=self.app.bg)
-        
-        self.width_label = Text(self.panel_3, grid=[0,1], text="Width, % ")
-        self.width_slider = Slider(self.panel_3, grid=[1,1], start=10, end=100,
-                            width=180, command=self.handle_set_width)
-        self.width_slider.value = 100
-        
+        freq_label = Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
+        self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.controller.frequency))
+        Text(self.panel_1, grid=[2,0], text="  ")      
+        self.play_button = PushButton(self.panel_1, grid=[3,0], text="Play", command=self.handle_request_play)
+        self.sequence_button = PushButton(self.panel_1, grid=[4,0], text="Sequence", command=self.handle_request_sequence)
+               
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
         # Link event handler functions to events. 
@@ -147,6 +134,7 @@ class View:
             self.width_slider.hide()
         self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
         self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+        self.freq_display.value = int(self.controller.frequency)
         
     def _update_combo(self, combo, option):
         self._debug_2("In _update_combo()")
@@ -187,15 +175,15 @@ class View:
         
         return 0
     
-    
+        
     def show_envelope(self, envelope):
         self._debug_2("In show_envelope()")
-        self.scope.clear()
-        self.scope.bg = "dark gray"
+        self.control_scope.clear()
+        self.control_scope.bg = "dark gray"
             
         # Plot signal to display
         origin_x = 0
-        origin_y = self.scope.height
+        origin_y = self.control_scope.height
         previous_x = origin_x
         previous_y = origin_y        
         num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
@@ -204,18 +192,55 @@ class View:
         max_env = max(envelope)
         for i in range(len(envelope)):
             scope_trace[i] += envelope[i] / max_env
-        #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.scope.width)
-        scale_x = (self.scope.width - 5) * sub_sampling_factor / num_points
-        scale_y = (self.scope.height - 5) 
+        #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.control_scope.width)
+        scale_x = (self.control_scope.width - 5) * sub_sampling_factor / num_points
+        scale_y = (self.control_scope.height - 5) 
         self._debug_2("scale_y = " + str(scale_y))
         for i in range(num_points // sub_sampling_factor):
             #self._debug_2(envelope[int(i * sub_sampling_factor)])
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
             plot_y = int(origin_y - (scale_y * scope_trace[int(i * sub_sampling_factor)]))
             plot_x = int(origin_x + (scale_x * i))
-            self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
+            self.control_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
             previous_y = plot_y
+            
+                    
+    def _plot_sound(self, wave):
+        self._debug_2("In _plot_sound()")
+        left_channel = np.hsplit(wave,2)[0]
+        right_channel = np.hsplit(wave,2)[1]
+        self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
+        
+        self.audio_scope.clear()
+        self.audio_scope.bg = "dark gray"
+
+        x_offset = 0
+        self._debug_2("Starting plot at sample = " + str(x_offset))
+        
+        # Plot signal to display
+        origin_x = 0
+        origin_y = int(self.audio_scope.height / 2)
+        previous_x = origin_x
+        previous_y = origin_y
+        sub_sampling_factor = 9
+        #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.audio_scope.width)
+        num_points = int(len(left_channel) / sub_sampling_factor) - x_offset
+        self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
+        scale_x = (self.audio_scope.width - 5)/ num_points
+        max_y = max(left_channel)
+        min_y = min(left_channel)
+        self._debug_2("Audio waveform (min, max) = " + str(min_y) + ", " + str(max_y) + ")")
+        max_y_range = max_y - min_y
+        scale_y = (self.audio_scope.height - 5)/ max_y_range
+        for i in range(num_points):
+            # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
+            plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
+            plot_x = int(origin_x + (scale_x * i))
+            self.audio_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
+            previous_x = plot_x
+            previous_y = plot_y
+    
             
     def shutdown(self):
         self._debug_1("\nNormal termination")
@@ -225,53 +250,68 @@ class View:
     #---------------------- Helper Functions --------------------
     # (intended only for use inside this module)
 
-    def _settings_controls(self):
-        self._debug_2("In _shaper_controls()")
-        Text(self.settings_panel, grid=[0,0], text="Attack time, ms: ")
-        self.attack_slider = Slider(self.settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
-                                    width=200, command=self.handle_set_attack)
-        self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
-        
-        Text(self.settings_panel, grid=[0,1], text="Decay time, ms:")
-        self.decay_slider = Slider(self.settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
-                                   width=200, command=self.handle_set_decay)
-        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
-        
-        Text(self.settings_panel, grid=[0,2], text="Sustain time, ms: ")
-        self.sustain_slider = Slider(self.settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
-                                     width=200, command=self.handle_set_sustain)
-        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+    def _tone_settings_controls(self):
+        self._debug_2("In _tone_settings_controls()")          
+        self.voice_combo = Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+                                     height="fill", command=self.handle_set_voice)
+                
+        self.waveform_combo = Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
+                                     height="fill", command=self.handle_set_waveform)
+        self.width_label = Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
+        self.width_slider = Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
+                            width=180, command=self.handle_set_width)
+        self.width_slider.value = 100
 
-        Text(self.settings_panel, grid=[0,3], text="Sustain level, %: ")
-        self.sustain_level_slider = Slider(self.settings_panel, grid=[1,3], start=10, end=100,
-                                           width=200, command=self.handle_set_sustain_level)
-        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         
-        Text(self.settings_panel, grid=[0,4], text="Release time, ms: ")
-        self.release_slider = Slider(self.settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
-                                     width=200, command=self.handle_set_release)
-        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
-            
-        Text(self.settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
-        self.tremolo_rate_slider = Slider(self.settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
-                                     width=200, command=self.handle_set_tremolo_rate)
-        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
-        
-        Text(self.settings_panel, grid=[0,6], text="Tremolo depth, %: ")
-        self.tremolo_depth_slider = Slider(self.settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
-                                     width=200, command=self.handle_set_tremolo_depth)
-        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
-        
-        Text(self.settings_panel, grid=[0,7], text="Vibrato rate, %: ")
-        self.vibrato_rate_slider = Slider(self.settings_panel, grid=[1,7], start=0, end=MAX_VIBRATO_RATE,
+        Text(self.tone_settings_panel, grid=[0,2], text="Vibrato rate, %: ")
+        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_VIBRATO_RATE,
                                      width=200, command=self.handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
         
-        Text(self.settings_panel, grid=[0,8], text="Vibrato depth, %: ")
-        self.vibrato_depth_slider = Slider(self.settings_panel, grid=[1,8], start=0, end=MAX_VIBRATO_DEPTH,
+        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_DEPTH,
                                      width=200, command=self.handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
+
+
+    def _envelope_settings_controls(self):
+        self._debug_2("In _envelope_settings_controls()")
+        
+        Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
+        self.attack_slider = Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
+                                    width=200, command=self.handle_set_attack)
+        self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
+        
+        Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
+        self.decay_slider = Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
+                                   width=200, command=self.handle_set_decay)
+        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
+        
+        Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
+        self.sustain_slider = Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+                                     width=200, command=self.handle_set_sustain)
+        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+
+        Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
+        self.sustain_level_slider = Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
+                                           width=200, command=self.handle_set_sustain_level)
+        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
+        
+        Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
+        self.release_slider = Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
+                                     width=200, command=self.handle_set_release)
+        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
+        Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_slider = Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
+                                     width=200, command=self.handle_set_tremolo_rate)
+        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+        
+        Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_slider = Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
+                                     width=200, command=self.handle_set_tremolo_depth)
+        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+         
    
     def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
         self._debug_2("In _draw_keyboard()")
@@ -288,42 +328,7 @@ class View:
                 key_top = BK_Y0
                 self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
                 
-                    
-    def _plot_sound(self, wave):
-        self._debug_2("In _plot_sound()")
-        left_channel = np.hsplit(wave,2)[0]
-        right_channel = np.hsplit(wave,2)[1]
-        self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
-        
-        self.scope.clear()
-        self.scope.bg = "dark gray"
 
-        x_offset = 0
-        self._debug_2("Starting plot at sample = " + str(x_offset))
-        
-        # Plot signal to display
-        origin_x = 0
-        origin_y = int(self.scope.height / 2)
-        previous_x = origin_x
-        previous_y = origin_y
-        sub_sampling_factor = 9
-        #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.scope.width)
-        num_points = int(len(left_channel) / sub_sampling_factor) - x_offset
-        self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
-        scale_x = (self.scope.width - 5)/ num_points
-        max_y = max(left_channel)
-        min_y = min(left_channel)
-        self._debug_2("Audio waveform (min, max) = " + str(min_y) + ", " + str(max_y) + ")")
-        max_y_range = max_y - min_y
-        scale_y = (self.scope.height - 5)/ max_y_range
-        for i in range(num_points):
-            # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
-            plot_x = int(origin_x + (scale_x * i))
-            self.scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
-            previous_x = plot_x
-            previous_y = plot_y
-    
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
@@ -459,6 +464,7 @@ if __name__ == "__main__":
 
     SAMPLE_RATE = 44100
     MAX_VOICES = 12
+    LOWEST_TONE = 110
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
     DEFAULT_DECAY = 20
@@ -509,7 +515,11 @@ if __name__ == "__main__":
         
         def on_request_note(self, key, voice = -1):
             self.view._debug_2("Set key to " + str(key))
-            
+            # Calculate frequency to display
+            self.current_key = key
+            self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
+            self.view.show_new_settings()
+        
         def on_request_width(self, width):
             self.view._debug_2("Set width % to " + str(width))
         
