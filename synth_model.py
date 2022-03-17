@@ -120,8 +120,9 @@ class Model:
             times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
             # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
             radians_per_sec = 2 * np.pi * frequency
-            # Fourier series fundamental coefficient, A1 = (2 / pi) = 0.6366
-            cancellation_depth = 0.6366 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
+            # Fourier series fundamental coefficient, A1 = (2 * sin(width * pi / 2) / pi) [check]
+            tone_a_1 = 2 * np.sin(np.pi * width / 200) / np.pi
+            cancellation_depth = tone_a_1 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
             phase_advance = 0.5 * np.pi * (1 - (width/100))
             cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
             tone = tone - cancellation_tone
@@ -154,8 +155,9 @@ class Model:
             times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
             # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
             radians_per_sec = 2 * np.pi * frequency
-            # Fourier series fundamental coefficient, A1 = (4 / pi) = 1.273
-            cancellation_depth = 1.273 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
+            # Fourier series fundamental coefficient, A1 = (4 * sin(width * pi / 2))/ pi)
+            tone_a_1 = 4 * np.sin(np.pi * width / 200) / np.pi
+            cancellation_depth = tone_a_1 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
             phase_advance = 0.5 * np.pi * (1 - (width/100))
             cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
             tone = tone - cancellation_tone
@@ -351,6 +353,7 @@ if __name__ == "__main__":
             self.name = "Unused"
             self.waveform = "Sine"
             self.width = 100
+            self.harmonic_boost = 0
             self.vibrato_rate = 0
             self.vibrato_depth = 0
             self.tremolo_rate = 0
