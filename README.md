@@ -20,7 +20,8 @@ If you edit the online version of this file, it may conflict with other changes 
 
 5. Storage and recall of synth settings (voices and patches). (Done for voices.)
 
-6. Add tremolo (amplitude wobble) and vibrato (frequency wobble) to all waveforms. (Under way)
+6. Add tremolo (amplitude wobble), vibrato (frequency wobble) and harmonic boost (fundamental cancellation)
+   to all waveforms. (Done)
 
 7. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 

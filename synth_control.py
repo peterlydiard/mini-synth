@@ -36,6 +36,7 @@ class Voice_Parameters:
         self.name = "Unused"
         self.waveform = "Sine"
         self.width = 100
+        self.harmonic_boost = 0
         self.vibrato_rate = 0
         self.vibrato_depth = 0
         self.tremolo_rate = 0
@@ -90,6 +91,7 @@ class Controller:
     def on_request_waveform(self, waveform):
         self._debug_2("In on_request_waveform: " + waveform)
         self.voices[self.voice_index].waveform = waveform
+        self.view.show_new_settings()
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
@@ -139,6 +141,12 @@ class Controller:
         self._debug_2("In on_request_tremolo_depth: " + str(value))
         self.voices[self.voice_index].tremolo_depth = int(value)
         self._change_envelope()
+        self._play_current_note()
+        
+    def on_request_harmonic_boost(self, value):
+        self._debug_2("In on_request_harmonic_boost: " + str(value))
+        self.voices[self.voice_index].harmonic_boost = int(value)
+        self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_vibrato_rate(self, value):
@@ -210,6 +218,8 @@ class Controller:
             values.append(self.voices[vi].waveform)
             names.append(name_prefix + "width")
             values.append(int(self.voices[vi].width))
+            names.append(name_prefix + "harmonic_boost")
+            values.append(int(self.voices[vi].harmonic_boost))
             names.append(name_prefix + "vibrato_rate")
             values.append(int(self.voices[vi].vibrato_rate))
             names.append(name_prefix + "vibrato_depth")
@@ -253,6 +263,8 @@ class Controller:
                         self.voices[vi].waveform = values[i]
                     elif names[i] == name_prefix + "width":
                         self.voices[vi].width = int(values[i])
+                    elif names[i] == name_prefix + "harmonic_boost":
+                        self.voices[vi].harmonic_boost = int(values[i])
                     elif names[i] == name_prefix + "vibrato_rate":
                         self.voices[vi].vibrato_rate = int(values[i])
                     elif names[i] == name_prefix + "vibrato_depth":

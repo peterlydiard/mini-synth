@@ -44,7 +44,7 @@ class Model:
             self.envelopes.append(envelope)
         pass
         
-    # Create a unit-amplitude sine wave.
+    # Create a unit-amplitude sine wave with vibrato.
     def _sine_wave(self, frequency):
         self._debug_2("Sine wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
@@ -65,7 +65,7 @@ class Model:
         return tone
 
 
-    # Create a unit-amplitude trianle wave.
+    # Create a unit-amplitude triangle wave with vibrato and harmonic boost.
     def _triangle_wave(self, frequency):
         self._debug_2("Triangle wave freq, max duration (ms) = " + str(frequency) + ", " + str(self.max_duration))
         # Generate array with duration*sample_rate steps, ranging between 0 and duration (converted to seconds)
@@ -83,10 +83,20 @@ class Model:
         # Generate a triangle wave
         ramp_with_vibrato = ramp + vibrato_tone
         tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1
+        # Check harmonic boost parameter
+        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
+            # Generate a sine wave to cancel the fundamental frequency of the triangle wave.
+            radians_per_sec = 2 * np.pi * frequency
+            # Fourier series fundamental coefficient, A1 = 8 / (pi * pi) = 0.8106
+            cancellation_depth = 0.8106 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
+            cancellation_tone = cancellation_depth * np.sin(radians_per_sec * times_sec)
+            tone = tone - cancellation_tone
+            boost_factor = 1 / max(tone)
+            tone = tone * boost_factor            
         return tone
 
     
-    # Create a unit-amplitude sawtooth wave with pulse width control.
+    # Create a unit-amplitude sawtooth wave with pulse width control, vibrato and harmonic boost.
     def _pwm_sawtooth_wave(self, frequency, width):
         #print("Saw wave freq, width, duration = " + str(frequency) + ", " + str(width)+ ", " + str(duration))
         width = float(width)
@@ -103,10 +113,24 @@ class Model:
         
         # Generate a sawtooth wave
         tone = np.clip((100/width) * (((ramp + vibrato_tone) % 2.0) + width/100 - 2.0), -1.0, 1.0)
+        
+        # Check harmonic boost parameter
+        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
+            # Generate array with duration*sample_rate steps, ranging between 0 and duration (converted to seconds)
+            times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
+            # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
+            radians_per_sec = 2 * np.pi * frequency
+            # Fourier series fundamental coefficient, A1 = (2 / pi) = 0.6366
+            cancellation_depth = 0.6366 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
+            phase_advance = 0.5 * np.pi * (1 - (width/100))
+            cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
+            tone = tone - cancellation_tone
+            boost_factor = 1 / max(tone)
+            tone = tone * boost_factor            
         return tone
     
     
-    # Create a unit-amplitude square wave with pulse width control.
+    # Create a unit-amplitude square wave with pulse width control, vibrato and harmonic boost.
     def _pwm_square_wave(self, frequency, width):
         #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
         width = float(width)
@@ -123,6 +147,20 @@ class Model:
         
         # Generate a square wave, clip sine to avoid using scipy library.
         tone = np.clip(1000 * (((ramp + vibrato_tone) % 2.0) + (width/100) - 2.0), -1.0, 1.0)
+        
+        # Check harmonic boost parameter
+        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
+            # Generate array with duration*sample_rate steps, ranging between 0 and duration (converted to seconds)
+            times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
+            # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
+            radians_per_sec = 2 * np.pi * frequency
+            # Fourier series fundamental coefficient, A1 = (4 / pi) = 1.273
+            cancellation_depth = 1.273 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
+            phase_advance = 0.5 * np.pi * (1 - (width/100))
+            cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
+            tone = tone - cancellation_tone
+            boost_factor = 1 / max(tone)
+            tone = tone * boost_factor
         return tone
     
     
@@ -396,3 +434,7 @@ if __name__ == "__main__":
     finish = time.perf_counter()
     
     model._debug_1("Make 1 voice in seconds = " + str(finish - start))
+    
+#---------------------------- References and Acknowledgements --------------------------------
+#
+# The Fourier Series by Erik Cheever of Swathmore College. https://lpsa.swarthmore.edu/Fourier/Series/WhyFS.html

@@ -44,6 +44,7 @@ MAX_TREMOLO_RATE = 100
 MAX_TREMOLO_DEPTH = 100
 MAX_VIBRATO_RATE = 100
 MAX_VIBRATO_DEPTH = 100
+MAX_HARMONIC_BOOST = 100
 MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 
 # ------------------------------
@@ -125,6 +126,11 @@ class View:
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
         waveform = self.controller.voices[self.controller.voice_index].waveform
+        self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
+        self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
+        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+        self.freq_display.value = int(self.controller.frequency)
         if waveform == "Sawtooth" or waveform == "Square":
             self.width_label.show()
             self.width_slider.show()
@@ -132,9 +138,14 @@ class View:
         else:
             self.width_label.hide()
             self.width_slider.hide()
-        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
-        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
-        self.freq_display.value = int(self.controller.frequency)
+        if not waveform == "Sine":
+            self.harmonic_boost_label.show()
+            self.harmonic_boost_slider.show()
+            self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].harmonic_boost
+        else:
+            self.harmonic_boost_label.hide()
+            self.harmonic_boost_slider.hide()        
+
         
     def _update_combo(self, combo, option):
         self._debug_2("In _update_combo()")
@@ -232,7 +243,7 @@ class View:
         min_y = min(left_channel)
         self._debug_2("Audio waveform (min, max) = " + str(min_y) + ", " + str(max_y) + ")")
         max_y_range = max_y - min_y
-        scale_y = (self.audio_scope.height - 5)/ max_y_range
+        scale_y = 0.9 * (self.audio_scope.height - 5)/ max_y_range
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
             plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
@@ -259,17 +270,21 @@ class View:
                                      height="fill", command=self.handle_set_waveform)
         self.width_label = Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
         self.width_slider = Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
-                            width=180, command=self.handle_set_width)
+                            width=200, command=self.handle_set_width)
         self.width_slider.value = 100
 
+        self.harmonic_boost_label = Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
+        self.harmonic_boost_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_HARMONIC_BOOST,
+                                     width=200, command=self.handle_set_harmonic_boost)
+        self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
         
-        Text(self.tone_settings_panel, grid=[0,2], text="Vibrato rate, %: ")
-        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_VIBRATO_RATE,
+        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
+        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_RATE,
                                      width=200, command=self.handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
         
-        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato depth, %: ")
-        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_DEPTH,
+        Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,4], start=0, end=MAX_VIBRATO_DEPTH,
                                      width=200, command=self.handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
 
@@ -414,6 +429,10 @@ class View:
         self._debug_2("In handle_set_tremolo_depth()")
         self.controller.on_request_tremolo_depth(int(value))
         
+    def handle_set_harmonic_boost(self, value):
+        self._debug_2("In handle_set_harmonic_boost()")
+        self.controller.on_request_harmonic_boost(int(value))
+        
     def handle_set_vibrato_rate(self, value):
         self._debug_2("In handle_set_vibrato_rate()")
         self.controller.on_request_vibrato_rate(int(value))
@@ -539,13 +558,16 @@ if __name__ == "__main__":
             self.view._debug_2("Set release to " + str(value))
             
         def on_request_tremolo_rate(self, value):
-            self.view._debug_2("Set tremolo_Rate to " + str(value))
+            self.view._debug_2("Set tremolo_rate to " + str(value))
         
         def on_request_tremolo_depth(self, value):
             self.view._debug_2("Set tremolo_depth to " + str(value))
             
+        def on_request_harmonic_boost(self, value):
+            self.view._debug_2("Set harmonic_boost to " + str(value))
+            
         def on_request_vibrato_rate(self, value):
-            self.view._debug_2("Set vibrato_Rate to " + str(value))
+            self.view._debug_2("Set vibrato_rate to " + str(value))
         
         def on_request_vibrato_depth(self, value):
             self.view._debug_2("Set vibrato_depth to " + str(value))
