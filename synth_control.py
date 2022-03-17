@@ -110,27 +110,32 @@ class Controller:
         self._debug_2("In on_request_attack: " + str(value))
         self.voices[self.voice_index].attack = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_decay(self, value):
         self._debug_2("In on_request_decay: " + str(value))
         self.voices[self.voice_index].decay = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_sustain(self, value):
         self._debug_2("In on_request_sustain: " + str(value))
         self.voices[self.voice_index].sustain_time = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_sustain_level(self, value):
         self._debug_2("In on_request_sustain_level: " + str(value))
         self.voices[self.voice_index].sustain_level = int(value)
         self._change_envelope()
+        self._play_current_note()
         
     def on_request_release(self, value):
         self._debug_2("In on_request_release: " + str(value))
         self.voices[self.voice_index].release = int(value)
         self._change_envelope()
-            
+        self._play_current_note()
+        
     def on_request_tremolo_rate(self, value):
         self._debug_2("In on_request_tremolo_rate: " + str(value))
         self.voices[self.voice_index].tremolo_rate = int(value)
