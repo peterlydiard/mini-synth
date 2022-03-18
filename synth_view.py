@@ -96,9 +96,12 @@ class View:
         self.panel_1.set_border(thickness=10, color=self.app.bg)
         freq_label = Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
         self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.controller.frequency))
-        Text(self.panel_1, grid=[2,0], text="  ")      
-        self.play_button = PushButton(self.panel_1, grid=[3,0], text="Play", command=self.handle_request_play)
-        self.sequence_button = PushButton(self.panel_1, grid=[4,0], text="Sequence", command=self.handle_request_sequence)
+        Text(self.panel_1, grid=[2,0], text="  ")
+        duration_label = Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
+        self.duration_display = Text(self.panel_1, grid=[4,0], text="0")
+        Text(self.panel_1, grid=[5,0], text="  ")      
+        self.play_button = PushButton(self.panel_1, grid=[6,0], text="Play", command=self.handle_request_play)
+        self.sequence_button = PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self.handle_request_sequence)
                
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
@@ -237,7 +240,8 @@ class View:
         
         self.audio_scope.clear()
         self.audio_scope.bg = "dark gray"
-
+        self.duration_display.value = str(int(len(left_channel) * 1000 / SAMPLE_RATE))
+        
         # Set graph origin to the middle, left edge of the drawing area.
         origin_x = 0
         origin_y = int(self.audio_scope.height / 2)
