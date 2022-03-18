@@ -192,25 +192,37 @@ class View:
         self.control_scope.clear()
         self.control_scope.bg = "dark gray"
             
-        # Plot signal to display
+        # Set graph origin to the bottom, left corner of the drawing area. Envelope always >= 0.
         origin_x = 0
         origin_y = self.control_scope.height
+        # Set initial values of the start of the lines being drawn.
         previous_x = origin_x
-        previous_y = origin_y        
-        num_points = int(self.controller.sample_rate * MAX_ENVELOPE_TIME / 1000)
+        previous_y = origin_y
+        # Set the number of points to plot. 
+        num_points = SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
+        # Increase no. of points to plot in steps of 50ms worth of samples.
+        while num_points < len(envelope):
+            if num_points < SAMPLE_RATE * 0.1:
+                num_points += SAMPLE_RATE * 0.020 # add 20 msec to timescale
+            else:
+                num_points += SAMPLE_RATE * 0.050 # add 50 msec to timescale
+        # Scale down the x axis
         sub_sampling_factor = 9 # found by trial and error
+        num_points = int(num_points // sub_sampling_factor) + sub_sampling_factor
+        self._debug_2("Envelope length, graph length = " + str(len(envelope)) + ", " + str(num_points))
         scope_trace = np.zeros(int(num_points), dtype = float)
         max_env = max(envelope)
-        for i in range(len(envelope)):
-            scope_trace[i] += envelope[i] / max_env
-        #sub_sampling_factor = int(self.controller.sample_rate * 5 / self.control_scope.width)
-        scale_x = (self.control_scope.width - 5) * sub_sampling_factor / num_points
+        env_points = int(len(envelope) / sub_sampling_factor)
+        # Select and normalise the envelope points to be plotted
+        for i in range(env_points):
+            scope_trace[i] += envelope[int(i * sub_sampling_factor)] / max_env
+        # Calculate scale factors to fit plot inside drawing widget.
+        scale_x = (self.control_scope.width - 5) / num_points
         scale_y = (self.control_scope.height - 5) 
         self._debug_2("scale_y = " + str(scale_y))
-        for i in range(num_points // sub_sampling_factor):
-            #self._debug_2(envelope[int(i * sub_sampling_factor)])
+        for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * scope_trace[int(i * sub_sampling_factor)]))
+            plot_y = int(origin_y - (scale_y * scope_trace[i]))
             plot_x = int(origin_x + (scale_x * i))
             self.control_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
@@ -226,27 +238,41 @@ class View:
         self.audio_scope.clear()
         self.audio_scope.bg = "dark gray"
 
-        x_offset = 0
-        self._debug_2("Starting plot at sample = " + str(x_offset))
-        
-        # Plot signal to display
+        # Set graph origin to the middle, left edge of the drawing area.
         origin_x = 0
         origin_y = int(self.audio_scope.height / 2)
+        # Set initial values of the start of the lines being drawn.
         previous_x = origin_x
         previous_y = origin_y
-        sub_sampling_factor = 9
-        #sub_sampling_factor = int(self.controller.sample_rate * 3 / self.audio_scope.width)
-        num_points = int(len(left_channel) / sub_sampling_factor) - x_offset
-        self._debug_2("Sub sampling factor = " + str(sub_sampling_factor))
+        # Set the number of points to plot. 
+        num_points = SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
+        # Increase no. of points to plot in steps of 50ms worth of samples.
+        while num_points < len(left_channel):
+            if num_points < SAMPLE_RATE * 0.1:
+                num_points += SAMPLE_RATE * 0.020 # add 20 msec to timescale
+            else:
+                num_points += SAMPLE_RATE * 0.050 # add 50 msec to timescale
+        # Scale down the x axis
+        sub_sampling_factor = 9 # found by trial and error
+        num_points = int(num_points // sub_sampling_factor) + sub_sampling_factor
+        self._debug_2("Note length, graph length = " + str(len(left_channel)) + ", " + str(num_points))
+        scope_trace = np.zeros(int(num_points), dtype = float)
+        
+        note_points = int(len(left_channel) / sub_sampling_factor)
+        # Select the note points to be plotted
+        for i in range(note_points):
+            scope_trace[i] += left_channel[int(i * sub_sampling_factor)]
+        # Calculate scale factors to fit plot inside drawing widget.
         scale_x = (self.audio_scope.width - 5)/ num_points
         max_y = max(left_channel)
         min_y = min(left_channel)
         self._debug_2("Audio waveform (min, max) = " + str(min_y) + ", " + str(max_y) + ")")
         max_y_range = max_y - min_y
         scale_y = 0.9 * (self.audio_scope.height - 5)/ max_y_range
+        x_offset = 0
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * left_channel[(i*sub_sampling_factor) + x_offset]))
+            plot_y = int(origin_y - (scale_y * scope_trace[(i) + x_offset]))
             plot_x = int(origin_x + (scale_x * i))
             self.audio_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x

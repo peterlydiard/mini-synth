@@ -31,7 +31,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 9. White and pink noise generators, random pitch and amplitude modulation.
 
-10. Ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
+10. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
 
 11. Melody recording and editing?
 
@@ -50,19 +50,14 @@ Variables called key and semitone often refer to the same data. This is confusin
 The sustain_level parameter is input as a percentage but used as a factor with maximum value 1.0. This can be
 confusing.
 
-Dual display of tone and evelope would be better.
+Adjusting the envelope parameters and tremolo is laggy because for every detected change the envelope is remade and
+a note is played. If a short time delay were added to debounce the inputs the controls would be more responsive. This
+requires a timout event which seems to need multiprocessing in the Python program.
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.
-
-Perceived loudness of short notes is said to less than notes longer than a duration that reduces with increasing pitch.
-
-Real instruments have inharmonicity, where the higher partials are not exact multiples of the fundamental.
-
-Some instruments, e.g. oboe have lower levels of the fundamental than the higher harmonics / partials.
-
 
 ## Notes
 
@@ -74,16 +69,13 @@ to be a distinction between active voices and stored voice settings. A configura
 different settings files, but this creates the possibility of two voices having the same ID but different
 parameters.
 
-Different voices may have different pitch ranges and key to semitone mappings.
+Different voices may have different pitch ranges and key-to-semitone mappings.
 
 When controlling the VCF from the envelope shaper, a frequency offset linked to the tone fundamental frequency
 should perhaps be applied, to give the same kind of tone colour variation in all octaves.
 
 The Elektor Formant uses exponential amplitude control in its Voltage Controlled Amplifier for the main envelope
 and linear modulation for tremolo effects.
-
-Vibrato effect may be produced in waveform generation functions by adding periodic time offsets to the
-sample times arrays.
 
 All notes are currently the same loudness and duration. A more complicated screen KB interface might get around this.
 Some synths modify the ADSR length with pitch using "key follow". 
@@ -99,7 +91,8 @@ believed to do this automatically for some functions.)
 
 Does the sampled waveform create noticeable pitch/period jitter on square and sawtooth waveforms?
 
-Are there performance limits in the pygame.mixer module that cause pausing during a high note rate?
+Are there performance limits in the pygame.mixer module that cause pausing during a high note rate? Consider using the
+sounddevice module.
 
 If different instruments have different ranges, where should the mapping from key numbers to tone frequencies be done?
 Use MIDI key numbers?
@@ -116,7 +109,11 @@ Self-oscillation of LPFs can be a positive feature apparently.
 
 Extended LFO rates into the audio range with independent LFO control of VCO and pulse width can produce very complex sounds.
 
-Stereo panning, ring modulation.
+Perceived loudness of short notes is said to less than notes longer than a duration that reduces with increasing pitch.
+
+Real instruments have inharmonicity, where the higher partials are not exact multiples of the fundamental.
+
+Some instruments, e.g. oboe have lower levels of the fundamental than the higher harmonics / partials.
 
 Roland RE201 Space Echo.
 
