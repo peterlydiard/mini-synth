@@ -296,7 +296,7 @@ class Controller:
     
     def _change_envelope(self):
         new_envelope = self.model.change_envelope(self.voice_index, self.voices[self.voice_index])
-        self.view.show_envelope(new_envelope)
+        self.view.plot_envelope(new_envelope)
   
     def _debug_1(self, message):
         global debug_level

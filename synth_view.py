@@ -100,23 +100,107 @@ class View:
         duration_label = Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
         self.duration_display = Text(self.panel_1, grid=[4,0], text="0")
         Text(self.panel_1, grid=[5,0], text="  ")      
-        self.play_button = PushButton(self.panel_1, grid=[6,0], text="Play", command=self.handle_request_play)
-        self.sequence_button = PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self.handle_request_sequence)
+        self.play_button = PushButton(self.panel_1, grid=[6,0], text="Play", command=self._handle_request_play)
+        self.sequence_button = PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self._handle_request_sequence)
                
         self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
         # Link event handler functions to events. 
-        self.keyboard.when_mouse_dragged = self.handle_mouse_dragged        
-        self.keyboard.when_left_button_pressed = self.handle_key_pressed         
+        self.keyboard.when_mouse_dragged = self._handle_mouse_dragged        
+        self.keyboard.when_left_button_pressed = self._handle_key_pressed         
         
         # set up exit function
-        self.app.when_closed = self.handle_close_app
+        self.app.when_closed = self._handle_close_app
         
         self.show_new_settings()
         
         # enter endless loop, waiting for user input via guizero widgets.
         self.app.display()
         
+
+    def _tone_settings_controls(self):
+        self._debug_2("In _tone_settings_controls()")          
+        self.voice_combo = Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+                                     height="fill", command=self._handle_set_voice)
+                
+        self.waveform_combo = Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
+                                     height="fill", command=self._handle_set_waveform)
+        self.width_label = Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
+        self.width_slider = Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
+                            width=200, command=self._handle_set_width)
+        self.width_slider.value = 100
+
+        self.harmonic_boost_label = Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
+        self.harmonic_boost_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_HARMONIC_BOOST,
+                                     width=200, command=self._handle_set_harmonic_boost)
+        self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
+        
+        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
+        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_RATE,
+                                     width=200, command=self._handle_set_vibrato_rate)
+        self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
+        
+        Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,4], start=0, end=MAX_VIBRATO_DEPTH,
+                                     width=200, command=self._handle_set_vibrato_depth)
+        self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
+
+
+    def _envelope_settings_controls(self):
+        self._debug_2("In _envelope_settings_controls()")
+        
+        Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
+        self.attack_slider = Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
+                                    width=200, command=self._handle_set_attack)
+        self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
+        
+        Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
+        self.decay_slider = Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
+                                   width=200, command=self._handle_set_decay)
+        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
+        
+        Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
+        self.sustain_slider = Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+                                     width=200, command=self._handle_set_sustain)
+        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+
+        Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
+        self.sustain_level_slider = Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
+                                           width=200, command=self._handle_set_sustain_level)
+        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
+        
+        Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
+        self.release_slider = Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
+                                     width=200, command=self._handle_set_release)
+        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
+            
+        Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_slider = Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
+                                     width=200, command=self._handle_set_tremolo_rate)
+        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+        
+        Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_slider = Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
+                                     width=200, command=self._handle_set_tremolo_depth)
+        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+         
+   
+    def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
+        self._debug_2("In _draw_keyboard()")
+        self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
+
+        for i in range(NUM_WHITE_KEYS):
+            key_left = WK_X0 + KEY_X_SPACING * i
+            key_top = WK_Y0
+            self.keyboard.rectangle(key_left, key_top, key_left + WK_WIDTH, key_top + WK_HEIGHT, color = "white")
+
+        for i in range(NUM_BLACK_KEYS):
+            if (i % 7) in [0, 1, 3, 4, 5]:
+                key_left = BK_X0 + KEY_X_SPACING * i
+                key_top = BK_Y0
+                self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
+
+
     def show_new_settings(self):
         self._debug_2("In show_new_setings()")
         voice_name = "Voice " + str(self.controller.voice_index + 1)
@@ -149,7 +233,7 @@ class View:
             self.harmonic_boost_label.hide()
             self.harmonic_boost_slider.hide()        
 
-        
+    # Put the selected option at the top of the Combo list.    
     def _update_combo(self, combo, option):
         self._debug_2("In _update_combo()")
         if not combo.remove(option):
@@ -157,41 +241,10 @@ class View:
         else:
             combo.insert(0, option)
             combo.select_default()
+   
         
-    def play_sound(self, wave):
-        self._debug_2("In play_sound()")
-        global last_output_time
-        
-        if not self.sound is None:
-            self.sound.fadeout(200)
-            self.sound = None
-        # Ensure that highest value is in 16-bit range
-        max_level = np.max(np.abs(wave))
-        if max_level == 0:
-            self._debug_1("ERROR: zero waveform in play_sound().")
-            return -1
-        
-        audio = wave * (2**15 - 1) / max_level
-        # Convert to 16-bit data
-        audio = audio.astype(np.int16)
-        # create a pygame Sound object and play it.
-        sound = pygame.sndarray.make_sound(audio)
-        sound.play()
-        self.sound = sound
-        now = time.perf_counter()
-        self._debug_2("Time since last note = " + str(now-last_output_time))
-        last_output_time = now
-        
-        if self.update_display == True:
-            self._debug_2("Updating display")
-            self.freq_display.value = int(self.controller.frequency)
-            self._plot_sound(wave)
-        
-        return 0
-    
-        
-    def show_envelope(self, envelope):
-        self._debug_2("In show_envelope()")
+    def plot_envelope(self, envelope):
+        self._debug_2("In plot_envelope()")
         self.control_scope.clear()
         self.control_scope.bg = "dark gray"
             
@@ -283,6 +336,38 @@ class View:
             previous_y = plot_y
     
             
+    def play_sound(self, wave):
+        self._debug_2("In play_sound()")
+        global last_output_time
+        
+        if not self.sound is None:
+            self.sound.fadeout(200)
+            self.sound = None
+        # Ensure that highest value is in 16-bit range
+        max_level = np.max(np.abs(wave))
+        if max_level == 0:
+            self._debug_1("ERROR: zero waveform in play_sound().")
+            return -1
+        
+        audio = wave * (2**15 - 1) / max_level
+        # Convert to 16-bit data
+        audio = audio.astype(np.int16)
+        # create a pygame Sound object and play it.
+        sound = pygame.sndarray.make_sound(audio)
+        sound.play()
+        self.sound = sound
+        now = time.perf_counter()
+        self._debug_2("Time since last note = " + str(now-last_output_time))
+        last_output_time = now
+        
+        if self.update_display == True:
+            self._debug_2("Updating display")
+            self.freq_display.value = int(self.controller.frequency)
+            self._plot_sound(wave)
+        
+        return 0
+ 
+ 
     def shutdown(self):
         self._debug_1("\nNormal termination")
         pygame.mixer.music.stop()
@@ -290,88 +375,6 @@ class View:
             
     #---------------------- Helper Functions --------------------
     # (intended only for use inside this module)
-
-    def _tone_settings_controls(self):
-        self._debug_2("In _tone_settings_controls()")          
-        self.voice_combo = Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
-                                     height="fill", command=self.handle_set_voice)
-                
-        self.waveform_combo = Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
-                                     height="fill", command=self.handle_set_waveform)
-        self.width_label = Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
-        self.width_slider = Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
-                            width=200, command=self.handle_set_width)
-        self.width_slider.value = 100
-
-        self.harmonic_boost_label = Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
-        self.harmonic_boost_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_HARMONIC_BOOST,
-                                     width=200, command=self.handle_set_harmonic_boost)
-        self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
-        
-        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
-        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_RATE,
-                                     width=200, command=self.handle_set_vibrato_rate)
-        self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
-        
-        Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
-        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,4], start=0, end=MAX_VIBRATO_DEPTH,
-                                     width=200, command=self.handle_set_vibrato_depth)
-        self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
-
-
-    def _envelope_settings_controls(self):
-        self._debug_2("In _envelope_settings_controls()")
-        
-        Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
-        self.attack_slider = Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
-                                    width=200, command=self.handle_set_attack)
-        self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
-        
-        Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
-        self.decay_slider = Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
-                                   width=200, command=self.handle_set_decay)
-        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
-        
-        Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
-        self.sustain_slider = Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
-                                     width=200, command=self.handle_set_sustain)
-        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
-
-        Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
-        self.sustain_level_slider = Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
-                                           width=200, command=self.handle_set_sustain_level)
-        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
-        
-        Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
-        self.release_slider = Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
-                                     width=200, command=self.handle_set_release)
-        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
-            
-        Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
-        self.tremolo_rate_slider = Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
-                                     width=200, command=self.handle_set_tremolo_rate)
-        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
-        
-        Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
-        self.tremolo_depth_slider = Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
-                                     width=200, command=self.handle_set_tremolo_depth)
-        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
-         
-   
-    def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
-        self._debug_2("In _draw_keyboard()")
-        self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
-
-        for i in range(NUM_WHITE_KEYS):
-            key_left = WK_X0 + KEY_X_SPACING * i
-            key_top = WK_Y0
-            self.keyboard.rectangle(key_left, key_top, key_left + WK_WIDTH, key_top + WK_HEIGHT, color = "white")
-
-        for i in range(NUM_BLACK_KEYS):
-            if (i % 7) in [0, 1, 3, 4, 5]:
-                key_left = BK_X0 + KEY_X_SPACING * i
-                key_top = BK_Y0
-                self.keyboard.rectangle(key_left, key_top, key_left + BK_WIDTH, key_top + BK_HEIGHT, color = "black")
                 
 
     def _debug_1(self, message):
@@ -412,13 +415,13 @@ class View:
         
     #-------------------- Event Handlers --------------------
     
-    def handle_set_voice(self, value):
-        self._debug_2("In handle_set_voice()")
+    def _handle_set_voice(self, value):
+        self._debug_2("In _handle_set_voice()")
         # pass on the number part of the string value
         self.controller.on_request_voice(int(value[6:]) - 1)
     
-    def handle_set_waveform(self, waveform):
-        self._debug_2("In handle_set_waveform()")
+    def _handle_set_waveform(self, waveform):
+        self._debug_2("In _handle_set_waveform()")
         if waveform == "Sawtooth" or waveform == "Square":
             self.width_label.show()
             self.width_slider.show()
@@ -427,61 +430,61 @@ class View:
             self.width_slider.hide()
         self.controller.on_request_waveform(waveform)
         
-    def handle_set_width(self, value):
-        self._debug_2("In handle_set_width()")
+    def _handle_set_width(self, value):
+        self._debug_2("In _handle_set_width()")
         self.controller.on_request_width(value)
         
-    def handle_set_attack(self, value):
-        self._debug_2("In handle_set_attack()")
+    def _handle_set_attack(self, value):
+        self._debug_2("In _handle_set_attack()")
         self.controller.on_request_attack(int(value))
 
-    def handle_set_decay(self, value):
-        self._debug_2("In handle_set_decay()")
+    def _handle_set_decay(self, value):
+        self._debug_2("In _handle_set_decay()")
         self.controller.on_request_decay(int(value))
         
-    def handle_set_sustain(self, value):
-        self._debug_2("In handle_set_sustain()")
+    def _handle_set_sustain(self, value):
+        self._debug_2("In _handle_set_sustain()")
         self.controller.on_request_sustain(int(value))
         
-    def handle_set_sustain_level(self, value):
-        self._debug_2("In handle_set_sustain_level()")
+    def _handle_set_sustain_level(self, value):
+        self._debug_2("In _handle_set_sustain_level()")
         self.controller.on_request_sustain_level(value)
         
-    def handle_set_release(self, value):
-        self._debug_2("In handle_set_release()")
+    def _handle_set_release(self, value):
+        self._debug_2("In _handle_set_release()")
         self.controller.on_request_release(int(value))
         
-    def handle_set_tremolo_rate(self, value):
-        self._debug_2("In handle_set_tremolo_rate()")
+    def _handle_set_tremolo_rate(self, value):
+        self._debug_2("In _handle_set_tremolo_rate()")
         self.controller.on_request_tremolo_rate(int(value))
         
-    def handle_set_tremolo_depth(self, value):
-        self._debug_2("In handle_set_tremolo_depth()")
+    def _handle_set_tremolo_depth(self, value):
+        self._debug_2("In _handle_set_tremolo_depth()")
         self.controller.on_request_tremolo_depth(int(value))
         
-    def handle_set_harmonic_boost(self, value):
-        self._debug_2("In handle_set_harmonic_boost()")
+    def _handle_set_harmonic_boost(self, value):
+        self._debug_2("In _handle_set_harmonic_boost()")
         self.controller.on_request_harmonic_boost(int(value))
         
-    def handle_set_vibrato_rate(self, value):
-        self._debug_2("In handle_set_vibrato_rate()")
+    def _handle_set_vibrato_rate(self, value):
+        self._debug_2("In _handle_set_vibrato_rate()")
         self.controller.on_request_vibrato_rate(int(value))
         
-    def handle_set_vibrato_depth(self, value):
-        self._debug_2("In handle_set_vibrato_depth()")
+    def _handle_set_vibrato_depth(self, value):
+        self._debug_2("In _handle_set_vibrato_depth()")
         self.controller.on_request_vibrato_depth(int(value))
         
-    def handle_request_play(self):
-        self._debug_2("In handle_request_play()")
+    def _handle_request_play(self):
+        self._debug_2("In _handle_request_play()")
         self.controller.on_request_play()
         
-    def handle_request_sequence(self):
-        self._debug_2("In handle_request_sequence()")
+    def _handle_request_sequence(self):
+        self._debug_2("In _handle_request_sequence()")
         self.update_display = False
         self.controller.on_request_sequence()
         self.update_display = True
                
-    def handle_mouse_dragged(self, event):
+    def _handle_mouse_dragged(self, event):
         self._debug_2("Mouse (pointer) deragged event at: (" + str(event.x) + ", " + str(event.y) + ")")
         if event.x < 0 or event.x >= self.keyboard.width or event.y < 0 or event.y >= self.keyboard.height:
             self._debug_2("WARNING: Mouse out of keyboard drawing.")
@@ -494,7 +497,7 @@ class View:
             self._debug_2("Not a key")
         self.previous_key = semitone
         
-    def handle_key_pressed(self, event):
+    def _handle_key_pressed(self, event):
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
@@ -502,8 +505,8 @@ class View:
         else:
             self._debug_2("Not a key")        
 
-    def handle_close_app(self):
-        self._debug_2("In handle_close_app()")
+    def _handle_close_app(self):
+        self._debug_2("In _handle_close_app()")
         self.controller.on_request_shutdown()
 
 #--------------------------- end of View class ---------------------------
