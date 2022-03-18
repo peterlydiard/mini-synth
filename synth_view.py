@@ -81,7 +81,21 @@ class View:
 
         self.app = App("Mini-synth", width = 940, height = 710)
         
-        self.panel_0 = Box(self.app, layout="grid")
+        self.top_menu = Box(self.app, layout = "grid")
+        
+        self.voice_editor_button = PushButton(self.top_menu, grid=[0,0], text="Voice editor", command=self.voice_editor_window)
+        
+        # Open voice editor window
+        self.voice_editor_window()
+
+        # enter endless loop, waiting for user input via guizero widgets.
+        self.app.display()
+        
+    
+    def voice_editor_window(self):
+        self.voice_editor = Window(self.app, "Voice editor", width = 940, height = 710)
+        
+        self.panel_0 = Box(self.voice_editor, layout="grid")
         
         self.tone_settings_panel = Box(self.panel_0, layout="grid", grid=[0,0])
         self._tone_settings_controls()
@@ -92,7 +106,7 @@ class View:
         self.audio_scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
         self.control_scope = Drawing(self.panel_0, grid=[1,1], width=500, height=220)
         
-        self.panel_1 = Box(self.app, layout="grid", border=10)
+        self.panel_1 = Box(self.voice_editor, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
         freq_label = Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
         self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.controller.frequency))
@@ -103,7 +117,7 @@ class View:
         self.play_button = PushButton(self.panel_1, grid=[6,0], text="Play", command=self._handle_request_play)
         self.sequence_button = PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self._handle_request_sequence)
                
-        self.keyboard = Drawing(self.app, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
+        self.keyboard = Drawing(self.voice_editor, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
         # Link event handler functions to events. 
         self.keyboard.when_mouse_dragged = self._handle_mouse_dragged        
@@ -114,10 +128,7 @@ class View:
         
         self.show_new_settings()
         
-        # enter endless loop, waiting for user input via guizero widgets.
-        self.app.display()
         
-
     def _tone_settings_controls(self):
         self._debug_2("In _tone_settings_controls()")          
         self.voice_combo = Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
@@ -285,11 +296,16 @@ class View:
             previous_y = plot_y
             
                     
-    def _plot_sound(self, wave):
+    def plot_sound(self, wave):
         self._debug_2("In _plot_sound()")
+        self.freq_display.value = int(self.controller.frequency)
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
         self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
+        max_level = np.max(np.abs(left_channel))
+        if max_level == 0:
+            self._debug_1("WARNING: zero waveform in plot_sound().")
+            return -1
         
         self.audio_scope.clear()
         self.audio_scope.bg = "dark gray"
@@ -329,7 +345,7 @@ class View:
         x_offset = 0
         for i in range(num_points):
             # Note pixel (0,0) is in the top left of the Drawing, so we need to invert the y data.
-            plot_y = int(origin_y - (scale_y * scope_trace[(i) + x_offset]))
+            plot_y = int(origin_y - (scale_y * scope_trace[int(i + x_offset)]))
             plot_x = int(origin_x + (scale_x * i))
             self.audio_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
@@ -346,7 +362,7 @@ class View:
         # Ensure that highest value is in 16-bit range
         max_level = np.max(np.abs(wave))
         if max_level == 0:
-            self._debug_1("ERROR: zero waveform in play_sound().")
+            self._debug_1("WARNING: zero waveform in play_sound().")
             return -1
         
         audio = wave * (2**15 - 1) / max_level
@@ -358,13 +374,7 @@ class View:
         self.sound = sound
         now = time.perf_counter()
         self._debug_2("Time since last note = " + str(now-last_output_time))
-        last_output_time = now
-        
-        if self.update_display == True:
-            self._debug_2("Updating display")
-            self.freq_display.value = int(self.controller.frequency)
-            self._plot_sound(wave)
-        
+        last_output_time = now       
         return 0
  
  

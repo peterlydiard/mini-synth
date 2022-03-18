@@ -170,7 +170,8 @@ class Controller:
         tone = self.model.fetch_tone(self.voice_index, self.current_key)
         note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
-            self.view.play_sound(note)        
+            self.view.play_sound(note)
+            self.view.plot_sound(note)
             
     def on_request_play(self):
         self._debug_2("In on_request_play().")
@@ -183,15 +184,18 @@ class Controller:
         self._debug_1("Timer start = " + str(start))
         next_time = start + 0.100
         time_asleep = 0
-        note = 0
-        while note < 100:
-            self.on_request_note(note % NUM_KEYS, self.voice_index)
+        key = 0
+        while key < 100:
+            tone = self.model.fetch_tone(self.voice_index, key % NUM_KEYS)
+            note = self.model.apply_envelope(self.voice_index, tone) 
+            if not note is None:
+                self.view.play_sound(note)
             now = time.perf_counter()
             sleep_time = next_time - now
             time_asleep += sleep_time
             time.sleep(max(0, sleep_time))
             next_time += 0.100
-            note += 1
+            key += 1
         finish = time.perf_counter()
         self._debug_1("100 notes in seconds = " + str(finish - start))
         self._debug_1("Time asleep in seconds = " + str(time_asleep))
