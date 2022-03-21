@@ -47,6 +47,11 @@ MAX_VIBRATO_DEPTH = 100
 MAX_HARMONIC_BOOST = 100
 MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 
+# Sequence editor constants
+
+SHEET_HEIGHT = 500
+SHEET_WIDTH = 500
+
 # ------------------------------
 # Variables
 # ------------------------------
@@ -85,13 +90,26 @@ class View:
         
         self.voice_editor_button = PushButton(self.top_menu, grid=[0,0], text="Voice editor", command=self.voice_editor_window)
         
+        self.sequence_editor_button = PushButton(self.top_menu, grid=[1,0], text="Sequence editor", command=self.sequence_editor_window)
+        
         # Open voice editor window
-        self.voice_editor_window()
+        # self.voice_editor_window()
 
+        # set up exit function
+        self.app.when_closed = self._handle_close_app
+        
         # enter endless loop, waiting for user input via guizero widgets.
         self.app.display()
         
     
+    def sequence_editor_window(self):
+        self.sequence_editor = Window(self.app, "Sequence editor", width = 940, height = 710)
+        
+        self.seq_box = Box(self.sequence_editor, layout="grid")
+        
+        self.sheet = Drawing(self.sequence_editor, SHEET_WIDTH, SHEET_HEIGHT)
+        
+        
     def voice_editor_window(self):
         self.voice_editor = Window(self.app, "Voice editor", width = 940, height = 710)
         
@@ -122,9 +140,6 @@ class View:
         # Link event handler functions to events. 
         self.keyboard.when_mouse_dragged = self._handle_mouse_dragged        
         self.keyboard.when_left_button_pressed = self._handle_key_pressed         
-        
-        # set up exit function
-        self.app.when_closed = self._handle_close_app
         
         self.show_new_settings()
         
@@ -357,7 +372,7 @@ class View:
         global last_output_time
         
         if not self.sound is None:
-            self.sound.fadeout(200)
+            self.sound.fadeout(100)
             self.sound = None
         # Ensure that highest value is in 16-bit range
         max_level = np.max(np.abs(wave))

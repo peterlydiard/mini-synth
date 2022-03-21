@@ -51,13 +51,22 @@ The sustain_level parameter is input as a percentage but used as a factor with m
 confusing.
 
 Adjusting the envelope parameters and tremolo is laggy because for every detected change the envelope is remade and
-a note is played. If a short time delay were added to debounce the inputs the controls would be more responsive. This
-requires a timout event which seems to need multiprocessing in the Python program.
+a note is played. If a short time delay were added to debounce the inputs the controls could be more responsive. This
+requires a timout event which seems to need multiprocessing in the Python program - tricky.
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
+The introduction of vibrato can cancel out the harmonic boost function because there is no vibrato on the cancelling tone.
+A tone-tracking notch filter may be more effective in this case.
+
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.
+
+All tones are generated 1000 ms long, regardless of the length of any notes using each tone. System RAM could be used more
+efficiently.
+
+Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated in stereo.
+
 
 ## Notes
 
@@ -113,9 +122,11 @@ Perceived loudness of short notes is said to less than notes longer than a durat
 
 Real instruments have inharmonicity, where the higher partials are not exact multiples of the fundamental.
 
-Some instruments, e.g. oboe have lower levels of the fundamental than the higher harmonics / partials.
+Some instruments, e.g. oboe have lower levels of the fundamental than the higher harmonics / partials - see harmonic boost function.
 
 Roland RE201 Space Echo.
+
+In the Serum software synth, one "oscillator" can contain sine, triangle, sawtooth and squre waves in any ratio.
 
 ## Background reading:
 
