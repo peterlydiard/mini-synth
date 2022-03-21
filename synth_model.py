@@ -82,19 +82,8 @@ class Model:
         self._debug_2("Vibrato tone (min, max) = (" + str(min(vibrato_tone)) + ", " + str(max(vibrato_tone)) + ")") 
         # Generate a triangle wave
         ramp_with_vibrato = ramp + vibrato_tone
-        tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1
-        # Check harmonic boost parameter
-        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
-            # Generate a sine wave to cancel the fundamental frequency of the triangle wave.
-            radians_per_sec = 2 * np.pi * frequency
-            # Fourier series fundamental coefficient, A1 = 8 / (pi * pi) = 0.8106
-            cancellation_depth = 0.8106 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
-            cancellation_tone = cancellation_depth * np.sin(radians_per_sec * times_sec)
-            tone = tone - cancellation_tone
-            boost_factor = 1 / max(tone)
-            tone = tone * boost_factor            
+        tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1       
         return tone
-
     
     # Create a unit-amplitude sawtooth wave with pulse width control, vibrato and harmonic boost.
     def _pwm_sawtooth_wave(self, frequency, width):
@@ -113,21 +102,6 @@ class Model:
         
         # Generate a sawtooth wave
         tone = np.clip((100/width) * (((ramp + vibrato_tone) % 2.0) + width/100 - 2.0), -1.0, 1.0)
-        
-        # Check harmonic boost parameter
-        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
-            # Generate array with duration*sample_rate steps, ranging between 0 and duration (converted to seconds)
-            times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
-            # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
-            radians_per_sec = 2 * np.pi * frequency
-            # Fourier series fundamental coefficient, A1 = (2 * sin(width * pi / 2) / pi) [check]
-            tone_a_1 = 2 * np.sin(np.pi * width / 200) / np.pi
-            cancellation_depth = tone_a_1 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
-            phase_advance = 0.5 * np.pi * (1 - (width/100))
-            cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
-            tone = tone - cancellation_tone
-            boost_factor = 1 / max(tone)
-            tone = tone * boost_factor            
         return tone
     
     
@@ -148,23 +122,53 @@ class Model:
         
         # Generate a square wave, clip sine to avoid using scipy library.
         tone = np.clip(1000 * (((ramp + vibrato_tone) % 2.0) + (width/100) - 2.0), -1.0, 1.0)
-        
-        # Check harmonic boost parameter
-        if self.controller.voices[self.controller.voice_index].harmonic_boost > 0:
-            # Generate array with duration*sample_rate steps, ranging between 0 and duration (converted to seconds)
-            times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
-            # Generate a sine wave to cancel the fundamental frequency of the sawtooth.
-            radians_per_sec = 2 * np.pi * frequency
-            # Fourier series fundamental coefficient, A1 = (4 * sin(width * pi / 2))/ pi)
-            tone_a_1 = 4 * np.sin(np.pi * width / 200) / np.pi
-            cancellation_depth = tone_a_1 * self.controller.voices[self.controller.voice_index].harmonic_boost / 100
-            phase_advance = 0.5 * np.pi * (1 - (width/100))
-            cancellation_tone = cancellation_depth * np.sin((radians_per_sec * times_sec) + phase_advance)
-            tone = tone - cancellation_tone
-            boost_factor = 1 / max(tone)
-            tone = tone * boost_factor
         return tone
     
+    # Suppress the fundamental frequency and amplify the result to boost the harmonics.
+    def suppress_fundamental(self, tone, frequency):
+        harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
+        # Make a frequency control waveform
+        freq_control = frequency * np.ones(len(tone), dtype=float)
+        filter_q_factor = 2 # Magic number
+        filtered_tone = self.bandpass_filter(tone, freq_control, filter_q_factor)
+        # Compensate for settling time of filter, by merging more stable cycles with the early samples.
+        two_cycles = int(2 * self.sample_rate / frequency)
+        one_over_two_cycles = 1 / two_cycles # do division outside loop, to cut processor load.
+        for i in range(two_cycles):
+            filtered_tone[i] = (((two_cycles-i) * filtered_tone[i+two_cycles]) + (i * filtered_tone[i])) * one_over_two_cycles
+        boost_ratio = harmonic_boost / 100
+        tone = tone - (boost_ratio * filtered_tone)
+        boost_factor = 1 / max(tone)
+        tone = tone * boost_factor
+        return tone
+            
+    # Bandpass Filter.
+    # tone = input waveform to be filtered, freq_control = control signal to set filter centre frequency. 
+    # q_factor = ratio of filter centre frequency divided by 3dB bandwidth (approximately).
+    def bandpass_filter(self, tone, freq_control, q_factor):
+        
+        # Bandpass and bandstop (notch) biquadratic filters.
+        band_pass = np.zeros(len(tone))
+        #notch = np.zeros(len(tone))
+        x0 = x1 = x2 = x3 = x4 = 0
+        for i in range(len(tone)):
+            # Recalculate filter coefficients, every 1.45 milliseconds.
+            if i % 64 == 0:
+                fc = freq_control[i]
+                R = 1 - (np.pi * fc / (q_factor * self.sample_rate))
+                b2 = - R
+                a1 = - 2 * R * np.cos(2 * np.pi * fc / self.sample_rate)
+                a2 = R * R            
+                rescale = 1 - R
+            
+            # Calculate biquad filter.
+            x0 = tone[i] - (a1 * x1) - (a2 * x2)
+            band_pass[i] = rescale * (x0 + (b2 * x2))
+            #notch[i] = tone[i] - band_pass[i]
+            x2 = x1
+            x1 = x0
+        
+        return band_pass
     
     # Apply the envelope amplitude to the tone to make a note
     def apply_envelope(self, voice_index, tone, stereo=True):
@@ -283,16 +287,22 @@ class Model:
         waveform = self.controller.voices[voice_index].waveform
         width = self.controller.voices[voice_index].width
         if waveform == "Sine":
-            self.voices[voice_index, semitone] = self._sine_wave(frequency)
+            tone = self._sine_wave(frequency)
         elif waveform == "Triangle":
-            self.voices[voice_index, semitone] = self._triangle_wave(frequency)
+            tone = self._triangle_wave(frequency)
         elif waveform == "Sawtooth":
-            self.voices[voice_index, semitone] = self._pwm_sawtooth_wave(frequency, width)
+            tone = self._pwm_sawtooth_wave(frequency, width)
         elif waveform == "Square":
-            self.voices[voice_index, semitone] = self._pwm_square_wave(frequency, width)
+            tone = self._pwm_square_wave(frequency, width)
         else:
             self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
-                           
+        # If boosting harmonics, suppress the tone fundamental frequency.
+        harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
+        if waveform != "Sine" and harmonic_boost > 0:
+            self.voices[voice_index, semitone] = self.suppress_fundamental(tone, frequency)
+        else:
+            self.voices[voice_index, semitone] = tone
+            
     def fetch_tone(self, voice_index, semitone):
         self._debug_2("In fetch_tone()")
         if voice_index >= MAX_VOICES:

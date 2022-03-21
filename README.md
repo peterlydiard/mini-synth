@@ -56,8 +56,7 @@ requires a timout event which seems to need multiprocessing in the Python progra
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
-The introduction of vibrato can cancel out the harmonic boost function because there is no vibrato on the cancelling tone.
-A tone-tracking notch filter may be more effective in this case.
+The tone-tracking notch filter used to produce harmonic boost involves a lot more calculation to generate harmonic boost.
 
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.

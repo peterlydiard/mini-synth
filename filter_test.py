@@ -258,6 +258,40 @@ class Model:
         
         return low_pass[2:], high_pass[2:], band_pass[2:], notch[2:]
 
+    # Notch Filter.
+    # tone = input waveform to be filtered
+    # freq_control = control signal to set filter centre frequency notch filter. Range = 0 to about 7.5, with one
+    # octave per unit starting with 0 -> lowest keyboard tone (110 Hz) and 7.5833 -> 19912Hz (90 semitones higher).
+    # q_factor = ratio of filter centre frequency divided by 3dB bandwidth (approximately).
+    def notch_filter(self, tone, freq_control, q_factor):
+        
+        # Truncate raw tone to length of control waveform (plus 2 to allow for output truncation.
+        tone = tone[:(len(freq_control) + 2)]
+        
+        # Bandpass and bandstop (notch) biquadratic filters.
+        band_pass = np.zeros(len(tone) + 2)
+        notch = np.zeros(len(tone) + 2)
+        x0 = x1 = x2 = x3 = x4 = 0
+        for i in range(len(tone)):
+            # Recalculate filter coefficients, every 1.45 milliseconds.
+            if i % 64 == 0:
+                fc = min(0.4 * SAMPLE_RATE, (LOWEST_TONE * np.power(2, (freq_control[i]))) + 0.5)
+                R = 1 - (np.pi * fc / (q_factor * SAMPLE_RATE))
+                b2 = - R
+                a1 = - 2 * R * np.cos(2 * np.pi * fc / SAMPLE_RATE)
+                a2 = R * R            
+                rescale = 1 - R
+            
+            # Calculate biquad filter.
+            x0 = tone[i] - (a1 * x1) - (a2 * x2)
+            band_pass[i] = rescale * (x0 + (b2 * x2))
+            notch[i] = tone[i] - band_pass[i]
+            x2 = x1
+            x1 = x0
+        
+        return notch[2:]
+    
+    
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
