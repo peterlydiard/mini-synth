@@ -23,23 +23,26 @@ If you edit the online version of this file, it may conflict with other changes 
 6. Add tremolo (amplitude wobble), vibrato (frequency wobble) and harmonic boost (fundamental cancellation)
    to all waveforms. (Done)
 
-7. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
+7. Add sequence/melody editor. (In progress)
 
-8. Low frequency oscillators for modulating other parameters.
+8. Make variable lowpass and highpass, bandpass and bandstop filters to modify sound spectrum.
 
-9. Separate envelope shapers for VCF and VCA control.
+9. Low frequency oscillators for modulating other parameters.
 
-9. White and pink noise generators, random pitch and amplitude modulation.
+10. Separate envelope shapers for VCF and VCA control.
 
-10. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
+11. White and pink noise generators, random pitch and amplitude modulation.
 
-11. Melody recording and editing?
+12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
 
-12. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
+13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
-13. Algorithmic sequence generation, e.g. using Conways Game of Life?
+14. Algorithmic sequence generation, e.g. using Conways Game of Life?
 
 ## Known Bugs / Issues
+
+The control function _play_current_note() calls view.plot_sound() and the view function on_request_note() calls
+view.show_new_settings() which are not possible if the voice editor window is closed.
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
