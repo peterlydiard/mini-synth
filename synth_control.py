@@ -24,7 +24,7 @@ DEFAULT_SUSTAIN_LEVEL = 50
 DEFAULT_RELEASE = 20
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 1
+debug_level = 2
 # ------------------------------
 # Classes
 # ------------------------------
@@ -299,7 +299,7 @@ class Controller:
     # ------------------------------
     
     def _change_envelope(self):
-        new_envelope = self.model.change_envelope(self.voice_index, self.voices[self.voice_index])
+        new_envelope = self.model.make_envelope(self.voice_index)
         self.view.plot_envelope(new_envelope)
   
     def _debug_1(self, message):
