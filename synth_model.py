@@ -22,7 +22,7 @@ NUM_KEYS = (12 * NUM_OCTAVES) + 1
 MAX_VOICES = 4
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 1
+debug_level = 2
 
 ####################################################################
 
@@ -40,7 +40,7 @@ class Model:
     def main(self, max_voices=MAX_VOICES):
         for voice_index in range(MAX_VOICES):
             self.make_voice(voice_index)
-            envelope = np.zeros((int(self.sample_rate * MAX_DURATION / 1000)), dtype=float)
+            envelope = self.make_envelope(voice_index)
             self.envelopes.append(envelope)
         pass
         
@@ -87,7 +87,7 @@ class Model:
     
     # Create a unit-amplitude sawtooth wave with pulse width control, vibrato and harmonic boost.
     def _pwm_sawtooth_wave(self, frequency, width):
-        #print("Saw wave freq, width, duration = " + str(frequency) + ", " + str(width)+ ", " + str(duration))
+        self._debug_2("Sawtooth wave: freq, width = " + str(frequency) + ", " + str(width))
         width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration/1000) + 2 - width/100,
@@ -107,7 +107,7 @@ class Model:
     
     # Create a unit-amplitude square wave with pulse width control, vibrato and harmonic boost.
     def _pwm_square_wave(self, frequency, width):
-        #print("Square wave freq, duration = " + str(frequency) + ", " + str(duration))
+        self._debug_2("Square wave: freq, width = " + str(frequency) + ", " + str(width))
         width = float(width)
         # Generate linear ramp with total of duration*sample_rate steps.
         ramp = np.linspace(2.0 - width/100, (2 * frequency * self.max_duration / 1000) + 2 - width/100,
@@ -200,8 +200,9 @@ class Model:
         return note
     
         
-    def change_envelope(self, voice_index, voice):
-        self._debug_2("In change_envelope() ")
+    def make_envelope(self, voice_index):
+        self._debug_2("In make_envelope() ")
+        voice = self.controller.voices[voice_index]
         attack = voice.attack
         decay = voice.decay
         sustain_time = voice.sustain_time
@@ -268,7 +269,7 @@ class Model:
             self.voices[voice_index, semitone, 0] = -5 # Set first sample to an invalid value
         
     def make_voice(self, voice_index):
-        self._debug_2("In make_voice() ")
+        self._debug_1("In make_voice() - making voice:  " + str(voice_index))
         if voice_index >= MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
@@ -420,7 +421,7 @@ if __name__ == "__main__":
     
     start = time.perf_counter()
     
-    env = model.change_envelope(0, voice_params)
+    env = model.make_envelope(0)
         
     finish = time.perf_counter()
     
