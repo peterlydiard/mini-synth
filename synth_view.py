@@ -1,7 +1,7 @@
 # ------------------------------
 # Imports
 # ------------------------------
-from guizero import App, Window, Drawing, Box, Combo, Slider, Text, TextBox, PushButton
+from guizero import App, Window, Drawing, Box, Combo, Slider, Text, TextBox, PushButton, Waffle
 
 import pygame
 import pygame.mixer
@@ -34,6 +34,7 @@ NUM_WHITE_KEYS = (NUM_OCTAVES * 7) + 1
 NUM_BLACK_KEYS = (NUM_OCTAVES * 7) - 1
 NUM_KEYS = (12 * NUM_OCTAVES) + 1
 
+
 # ADSR shaper constants (times in milli-second units)
 
 MAX_ATTACK = 100
@@ -56,7 +57,7 @@ SHEET_WIDTH = 500
 # Variables
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 1
+debug_level = 2
 last_output_time = 0
 # ------------------------------
 #  Notes:
@@ -76,6 +77,10 @@ class View:
         self.sound = None
         self.previous_key = 0
         self.update_display = True
+        self.voice_window_open = False
+        self.sequence_window_open = False
+        self.displayed_frequency = LOWEST_TONE
+        
 
     def main(self):
         self._debug_1("In view.main()")
@@ -91,9 +96,6 @@ class View:
         self.voice_editor_button = PushButton(self.top_menu, grid=[0,0], text="Voice editor", command=self.voice_editor_window)
         
         self.sequence_editor_button = PushButton(self.top_menu, grid=[1,0], text="Sequence editor", command=self.sequence_editor_window)
-        
-        # Open voice editor window
-        # self.voice_editor_window()
 
         # set up exit function
         self.app.when_closed = self._handle_close_app
@@ -104,14 +106,33 @@ class View:
     
     def sequence_editor_window(self):
         self.sequence_editor = Window(self.app, "Sequence editor", width = 940, height = 710)
+        self.sequence_window_open = True
+        self.sequence_editor.when_closed = self._closed_sequence_editor
         
         self.seq_box = Box(self.sequence_editor, layout="grid")
+       
+        self.board = Waffle(self.seq_box, grid=[1,0], align="bottom", width=63, height=37, pad=0, dim=18, command=self._handle_set_seq_note)
+
+        self.draw_seq_keyboard(NUM_OCTAVES)
         
-        self.sheet = Drawing(self.sequence_editor, SHEET_WIDTH, SHEET_HEIGHT)
-        
-        
+   
+    def draw_seq_keyboard(self, num_octaves=NUM_OCTAVES):
+        self._debug_2("In draw_seq_keyboard()")
+              
+        for i in range(12 * NUM_OCTAVES + 1):
+            if (i % 12) in [1,3,6,8,10]:
+                self.board.set_pixel(0, 12 * NUM_OCTAVES - i, "black")
+                self.board.set_pixel(1, 12 * NUM_OCTAVES - i, "black")
+                self.board.set_pixel(2, 12 * NUM_OCTAVES - i, "black")
+                
+    def _closed_sequence_editor(self):
+        self.sequence_window_open = False
+        self.sequence_editor.destroy()
+                
     def voice_editor_window(self):
         self.voice_editor = Window(self.app, "Voice editor", width = 940, height = 710)
+        self.voice_editor.when_closed = self._closed_voice_editor
+        self.voice_window_open = True
         
         self.panel_0 = Box(self.voice_editor, layout="grid")
         
@@ -127,7 +148,7 @@ class View:
         self.panel_1 = Box(self.voice_editor, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
         freq_label = Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
-        self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.controller.frequency))
+        self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.displayed_frequency))
         Text(self.panel_1, grid=[2,0], text="  ")
         duration_label = Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
         self.duration_display = Text(self.panel_1, grid=[4,0], text="0")
@@ -229,6 +250,9 @@ class View:
 
     def show_new_settings(self):
         self._debug_2("In show_new_setings()")
+        if self.voice_window_open == False:
+            self._debug_2("Voice editor window is closed, settings can't be shown.")
+            return
         voice_name = "Voice " + str(self.controller.voice_index + 1)
         self._update_combo(self.voice_combo, voice_name)
         waveform_name = self.controller.voices[self.controller.voice_index].waveform
@@ -243,7 +267,7 @@ class View:
         self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
         self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
         self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
-        self.freq_display.value = int(self.controller.frequency)
+        self.freq_display.value = int(self.displayed_frequency)
         if waveform == "Sawtooth" or waveform == "Square":
             self.width_label.show()
             self.width_slider.show()
@@ -313,7 +337,10 @@ class View:
                     
     def plot_sound(self, wave):
         self._debug_2("In _plot_sound()")
-        self.freq_display.value = int(self.controller.frequency)
+        if self.voice_window_open == False:
+            self._debug_2("Can't plot sounds as voice editor window is closed.")
+            return
+        self.freq_display.value = int(self.displayed_frequency)
         left_channel = np.hsplit(wave,2)[0]
         right_channel = np.hsplit(wave,2)[1]
         self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
@@ -341,7 +368,7 @@ class View:
             else:
                 num_points += SAMPLE_RATE * 0.050 # add 50 msec to timescale
         # Scale down the x axis
-        sub_sampling_factor = 9 # found by trial and error
+        sub_sampling_factor = 2 # found by trial and error
         num_points = int(num_points // sub_sampling_factor) + sub_sampling_factor
         self._debug_2("Note length, graph length = " + str(len(left_channel)) + ", " + str(num_points))
         scope_trace = np.zeros(int(num_points), dtype = float)
@@ -391,7 +418,10 @@ class View:
         self._debug_2("Time since last note = " + str(now-last_output_time))
         last_output_time = now       
         return 0
- 
+
+    def _closed_voice_editor(self):
+        self.voice_window_open = False
+        self.voice_editor.destroy()
  
     def shutdown(self):
         self._debug_1("\nNormal termination")
@@ -440,6 +470,20 @@ class View:
         
     #-------------------- Event Handlers --------------------
     
+    
+    def _handle_set_seq_voice(self, x, y):
+        self._debug_2("In _handle_set_seq_voice: " + str(x) + ", " + str(y))
+        # pass on the number part of the string value
+        # self.controller.on_request_seq_voice(int(value[6:]) - 1)
+    
+    def _handle_set_seq_note(self, x, y):
+        self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
+        semitone = (12 * NUM_OCTAVES) - y
+        if semitone >= 0:
+            self.controller.on_request_note(semitone)
+        else:
+            self._debug_2("Not a key")          
+
     def _handle_set_voice(self, value):
         self._debug_2("In _handle_set_voice()")
         # pass on the number part of the string value
@@ -517,6 +561,7 @@ class View:
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
+                self.displayed_frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
                 self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")
@@ -526,6 +571,7 @@ class View:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
+            self.displayed_frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)          
             self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")        
@@ -594,7 +640,7 @@ if __name__ == "__main__":
             self.view._debug_2("Set key to " + str(key))
             # Calculate frequency to display
             self.current_key = key
-            self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
+            self.displayed_frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
             self.view.show_new_settings()
         
         def on_request_width(self, width):
