@@ -33,7 +33,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
-12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module?
+12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator?
 
 13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
@@ -67,10 +67,16 @@ into undisplayed settings.
 All tones are generated 1000 ms long, regardless of the length of any notes using each tone. System RAM could be used more
 efficiently.
 
-Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated in stereo.
+Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
+in stereo.
 
 
 ## Notes
+
+When passing around notes in a sequence, it may be appropriate to group them by timeslot, so that only the information
+that is needed for audio production, or for display is being moved around.
+
+The sequence editor could select which voices are to be shown, to allow for multiple voices on the same timeslot and note.
 
 MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 55 Hz is MIDI key 33 and number increases
 by 12 every octave.
