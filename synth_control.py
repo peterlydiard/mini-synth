@@ -34,6 +34,7 @@ class Voice_Parameters:
     def __init__(self):
         self.number = 0 # This number may be unrelated to the position of the voice in any lists.
         self.name = "Unused"
+        self.colour = (0,0,0)
         self.waveform = "Sine"
         self.width = 100
         self.harmonic_boost = 0
@@ -64,9 +65,25 @@ class Controller:
         for voice_index in range(MAX_VOICES):
             voice_params = Voice_Parameters()
             self.voices.append(voice_params)
+            self.voices[voice_index].colour = self.make_voice_colour(voice_index)
         self.restore_settings()
         self.model.main()
         self.view.main() # This function does not return control here.
+        
+    def make_voice_colour(self, voice_index):
+        shade_step = int(192 * 3 / MAX_VOICES)
+        # start with black.
+        red = 0
+        blue = 0
+        green = 0 
+        # Pick bright colours in rotation making the colours components darker for higher voices.
+        if (voice_index % 3) == 0:
+            red = 255 - int(voice_index * shade_step)
+        if ((voice_index+1) % 3) == 0:
+            green = 255 - int (voice_index * shade_step)
+        if ((voice_index+2) % 3) == 0:
+            blue = 255 - int (voice_index * shade_step)
+        return (red, green, blue)
         
     def on_request_voice(self, voice):
         self._debug_2("In on_request_voice: " + str(voice))
@@ -199,6 +216,9 @@ class Controller:
         finish = time.perf_counter()
         self._debug_1("100 notes in seconds = " + str(finish - start))
         self._debug_1("Time asleep in seconds = " + str(time_asleep))
+
+    def on_request_add_sequence_note(self, timeslot, voice_index, key):
+        self._debug_2("In on_request_add_sequence_note: " + str(timeslot) + ", " + str(voice_index) + ", " + str(key))
         
     def on_request_shutdown(self):
         self._debug_2("Shutdown requested")
