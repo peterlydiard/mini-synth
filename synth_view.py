@@ -48,7 +48,7 @@ MAX_VIBRATO_DEPTH = 100
 MAX_HARMONIC_BOOST = 100
 MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
 
-# Sequence editor constants
+# Sequence editor constants - unused!
 
 SHEET_HEIGHT = 500
 SHEET_WIDTH = 500
@@ -57,7 +57,7 @@ SHEET_WIDTH = 500
 # Variables
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 2
+debug_level = 1
 last_output_time = 0
 # ------------------------------
 #  Notes:
@@ -105,17 +105,19 @@ class View:
         
     
     def sequence_editor_window(self):
-        self.sequence_editor = Window(self.app, "Sequence editor", width = 940, height = 710)
+        self.sequence_editor = Window(self.app, "Sequence editor", width = 1200, height = 750)
         self.sequence_window_open = True
         self.sequence_editor.when_closed = self._closed_sequence_editor
         
         self.seq_box = Box(self.sequence_editor, layout="grid")
        
-        self.board = Waffle(self.seq_box, grid=[1,0], align="bottom", width=63, height=37, pad=0, dim=18, command=self._handle_set_seq_note)
+        self.board = Waffle(self.seq_box, grid=[0,0], align="bottom", width=63, height=37, pad=0, dim=18, command=self._handle_set_seq_note)
 
         self.draw_seq_keyboard(NUM_OCTAVES)
         
-   
+        self.seq_voice_combo = Combo(self.seq_box, grid=[0,1], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+                                     height="fill", command=self._handle_set_seq_voice)
+        
     def draw_seq_keyboard(self, num_octaves=NUM_OCTAVES):
         self._debug_2("In draw_seq_keyboard()")
               
@@ -124,11 +126,33 @@ class View:
                 self.board.set_pixel(0, 12 * NUM_OCTAVES - i, "black")
                 self.board.set_pixel(1, 12 * NUM_OCTAVES - i, "black")
                 self.board.set_pixel(2, 12 * NUM_OCTAVES - i, "black")
-                
+
     def _closed_sequence_editor(self):
+        self._debug_1("Sequence editor closed")
         self.sequence_window_open = False
         self.sequence_editor.destroy()
-                
+        
+    def _handle_set_seq_voice(self, value):
+        self._debug_2("In _handle_set_seq_voice: " + str(value))
+        # pass on the number part of the string value
+        self.controller.on_request_voice(int(value[6:]) - 1)
+    
+    def _handle_set_seq_note(self, x, y):
+        self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
+        semitone = (12 * NUM_OCTAVES) - y
+        if semitone >= 0:
+            self.controller.on_request_note(semitone)
+            if x > 2:
+                timeslot = x - 3
+                vi = self.controller.voice_index
+                old_colour = self.board.get_pixel(x, y)
+                self._debug_2("Old pixel colour = " + str(old_colour))
+                self.board.set_pixel(x, y, self.controller.voices[vi].colour)
+                self.controller.on_request_add_sequence_note(timeslot, vi, semitone)
+        else:
+            self._debug_2("Not a key")
+            
+    #--------------------------------- Voice editor -------------------------                
     def voice_editor_window(self):
         self.voice_editor = Window(self.app, "Voice editor", width = 940, height = 710)
         self.voice_editor.when_closed = self._closed_voice_editor
@@ -250,38 +274,38 @@ class View:
 
     def show_new_settings(self):
         self._debug_2("In show_new_setings()")
-        if self.voice_window_open == False:
-            self._debug_2("Voice editor window is closed, settings can't be shown.")
-            return
-        voice_name = "Voice " + str(self.controller.voice_index + 1)
-        self._update_combo(self.voice_combo, voice_name)
-        waveform_name = self.controller.voices[self.controller.voice_index].waveform
-        self._update_combo(self.waveform_combo, waveform_name)
-        self.attack_slider.value = str(self.controller.voices[self.controller.voice_index].attack)
-        self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
-        self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
-        self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
-        self.release_slider.value = self.controller.voices[self.controller.voice_index].release
-        waveform = self.controller.voices[self.controller.voice_index].waveform
-        self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
-        self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
-        self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
-        self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
-        self.freq_display.value = int(self.displayed_frequency)
-        if waveform == "Sawtooth" or waveform == "Square":
-            self.width_label.show()
-            self.width_slider.show()
-            self.width_slider.value = self.controller.voices[self.controller.voice_index].width
-        else:
-            self.width_label.hide()
-            self.width_slider.hide()
-        if not waveform == "Sine":
-            self.harmonic_boost_label.show()
-            self.harmonic_boost_slider.show()
-            self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].harmonic_boost
-        else:
-            self.harmonic_boost_label.hide()
-            self.harmonic_boost_slider.hide()        
+        if self.voice_window_open == True:
+            voice_name = "Voice " + str(self.controller.voice_index + 1)
+            self._update_combo(self.voice_combo, voice_name)
+            waveform = self.controller.voices[self.controller.voice_index].waveform
+            self._update_combo(self.waveform_combo, waveform)
+            self.attack_slider.value = str(self.controller.voices[self.controller.voice_index].attack)
+            self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
+            self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
+            self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
+            self.release_slider.value = self.controller.voices[self.controller.voice_index].release
+            self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
+            self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
+            self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
+            self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
+            self.freq_display.value = int(self.displayed_frequency)
+            if waveform == "Sawtooth" or waveform == "Square":
+                self.width_label.show()
+                self.width_slider.show()
+                self.width_slider.value = self.controller.voices[self.controller.voice_index].width
+            else:
+                self.width_label.hide()
+                self.width_slider.hide()
+            if not waveform == "Sine":
+                self.harmonic_boost_label.show()
+                self.harmonic_boost_slider.show()
+                self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].harmonic_boost
+            else:
+                self.harmonic_boost_label.hide()
+                self.harmonic_boost_slider.hide()
+        if self.sequence_window_open == True:
+            voice_name = "Voice " + str(self.controller.voice_index + 1)
+            self._update_combo(self.seq_voice_combo, voice_name) 
 
     # Put the selected option at the top of the Combo list.    
     def _update_combo(self, combo, option):
@@ -296,8 +320,7 @@ class View:
     def plot_envelope(self, envelope):
         self._debug_2("In plot_envelope()")
         self.control_scope.clear()
-        self.control_scope.bg = "dark gray"
-            
+        self.control_scope.bg = "dark gray"            
         # Set graph origin to the bottom, left corner of the drawing area. Envelope always >= 0.
         origin_x = 0
         origin_y = self.control_scope.height
@@ -420,11 +443,12 @@ class View:
         return 0
 
     def _closed_voice_editor(self):
+        self._debug_1("Voice editor closed")
         self.voice_window_open = False
         self.voice_editor.destroy()
  
     def shutdown(self):
-        self._debug_1("\nNormal termination")
+        self._debug_1("Normal termination")
         pygame.mixer.music.stop()
         self.app.destroy()        
             
@@ -469,20 +493,7 @@ class View:
         return semitone
         
     #-------------------- Event Handlers --------------------
-    
-    
-    def _handle_set_seq_voice(self, x, y):
-        self._debug_2("In _handle_set_seq_voice: " + str(x) + ", " + str(y))
-        # pass on the number part of the string value
-        # self.controller.on_request_seq_voice(int(value[6:]) - 1)
-    
-    def _handle_set_seq_note(self, x, y):
-        self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
-        semitone = (12 * NUM_OCTAVES) - y
-        if semitone >= 0:
-            self.controller.on_request_note(semitone)
-        else:
-            self._debug_2("Not a key")          
+       
 
     def _handle_set_voice(self, value):
         self._debug_2("In _handle_set_voice()")
@@ -600,6 +611,7 @@ if __name__ == "__main__":
             self.number = 0 # This number may be unrelated to the position of the voice in any lists.
             self.name = "Unused"
             self.waveform = "Sine"
+            self.colour = (0, 0, 0)
             self.width = 100        
             self.attack = DEFAULT_ATTACK
             self.decay = DEFAULT_DECAY
