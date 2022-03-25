@@ -26,11 +26,11 @@ class Seq_Editor:
         
         
     def sequence_editor_window(self):
-        self.sequence_editor = guizero.Window(self.view.app, "Sequence editor", width = 1200, height = 750)
+        self.window = guizero.Window(self.view.app, "Sequence editor", width = 1200, height = 750)
         self.sequence_window_open = True
-        self.sequence_editor.when_closed = self._closed_sequence_editor
+        self.window.when_closed = self._closed_sequence_editor
         
-        self.seq_box = guizero.Box(self.sequence_editor, layout="grid")
+        self.seq_box = guizero.Box(self.window, layout="grid")
        
         self.board = guizero.Waffle(self.seq_box, grid=[0,0], align="bottom", width=63, height=37, pad=0, dim=18, command=self._handle_set_seq_note)
 
@@ -53,13 +53,13 @@ class Seq_Editor:
     def show_new_settings(self):
         self._debug_2("In show_new_setings()")
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
-        self.view._update_combo(self.seq_voice_combo, voice_name)         
+        self.view.update_combo(self.seq_voice_combo, voice_name)         
 
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
-        self.sequence_window_open = False
-        self.sequence_editor.destroy()
+        self.view.on_request_voice_editor_closed()
+        self.window.destroy()
         
 
     def _handle_set_seq_voice(self, value):

@@ -188,7 +188,7 @@ class Controller:
         note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
             self.view.play_sound(note)
-            self.view.plot_sound(note)
+            self.view.show_sound(note)
             
     def on_request_play(self):
         self._debug_2("In on_request_play().")
@@ -320,7 +320,7 @@ class Controller:
     
     def _change_envelope(self):
         new_envelope = self.model.make_envelope(self.voice_index)
-        self.view.plot_envelope(new_envelope)
+        self.view.show_envelope(new_envelope)
   
     def _debug_1(self, message):
         global debug_level
