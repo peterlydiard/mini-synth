@@ -66,6 +66,8 @@ class Seq_Editor:
         self._debug_2("In _handle_set_seq_voice: " + str(value))
         # pass on the number part of the string value
         self.view.controller.on_request_voice(int(value[6:]) - 1)
+        if self.view.voice_window_open == False:
+            self.view.controller.on_request_note(15) # Illustrate new voice
     
     
     def _handle_set_seq_note(self, x, y):
