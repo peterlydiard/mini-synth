@@ -1,24 +1,17 @@
 # ------------------------------
 # Imports
 # ------------------------------
-from guizero import App, Window, Drawing, Box, Combo, Slider, Text, TextBox, PushButton, Waffle
-
-import pygame
-import pygame.mixer
-import pygame.sndarray
+import guizero
 import numpy as np
 import time
-
-######################### Global constants #########################
-
-SAMPLE_RATE = 44100
+import synth_constants as const
+import synth_audio
+import seq_editor
 
 # Keyboard constants
 
 white_semitones = [0, 2, 4, 5, 7, 9, 11]
 black_semitones = [1, 3, -1000, 6, 8, 10, -1000]
-NUM_OCTAVES = 3
-LOWEST_TONE = 110
 KEY_X_SPACING = 40
 WK_X0 = 25
 WK_Y0 = 25
@@ -28,25 +21,11 @@ WK_HEIGHT = 60
 WK_WIDTH = 30
 BK_HEIGHT = 30
 BK_WIDTH = 30
-KEYBOARD_WIDTH = (7 * NUM_OCTAVES  * KEY_X_SPACING) + WK_WIDTH + (2 * WK_X0)
+KEYBOARD_WIDTH = (7 * const.NUM_OCTAVES  * KEY_X_SPACING) + WK_WIDTH + (2 * WK_X0)
 KEYBOARD_HEIGHT = WK_HEIGHT + (2 *  WK_Y0)
-NUM_WHITE_KEYS = (NUM_OCTAVES * 7) + 1
-NUM_BLACK_KEYS = (NUM_OCTAVES * 7) - 1
-NUM_KEYS = (12 * NUM_OCTAVES) + 1
-
-
-# ADSR shaper constants (times in milli-second units)
-
-MAX_ATTACK = 100
-MAX_DECAY = 100
-MAX_SUSTAIN = 400
-MAX_RELEASE = 100
-MAX_TREMOLO_RATE = 100
-MAX_TREMOLO_DEPTH = 100
-MAX_VIBRATO_RATE = 100
-MAX_VIBRATO_DEPTH = 100
-MAX_HARMONIC_BOOST = 100
-MAX_ENVELOPE_TIME = MAX_ATTACK + MAX_DECAY + MAX_SUSTAIN + MAX_RELEASE
+NUM_WHITE_KEYS = (const.NUM_OCTAVES * 7) + 1
+NUM_BLACK_KEYS = (const.NUM_OCTAVES * 7) - 1
+NUM_KEYS = (12 * const.NUM_OCTAVES) + 1
 
 # Sequence editor constants - unused!
 
@@ -74,28 +53,26 @@ last_output_time = 0
 class View:
     def __init__(self, controller):
         self.controller = controller
-        self.sound = None
         self.previous_key = 0
         self.update_display = True
         self.voice_window_open = False
         self.sequence_window_open = False
-        self.displayed_frequency = LOWEST_TONE
+        self.seq_editor = None
+        self.displayed_frequency = const.LOWEST_TONE
         
 
     def main(self):
         self._debug_1("In view.main()")
         
-        # initialise stereo mixer (default)
-        pygame.mixer.init()
-        pygame.init()
+        synth_audio.initialise_audio()
 
-        self.app = App("Mini-synth", width = 940, height = 710)
+        self.app = guizero.App("Mini-synth", width = 940, height = 710)
         
-        self.top_menu = Box(self.app, layout = "grid")
+        self.top_menu = guizero.Box(self.app, layout = "grid")
         
-        self.voice_editor_button = PushButton(self.top_menu, grid=[0,0], text="Voice editor", command=self.voice_editor_window)
+        self.voice_editor_button = guizero.PushButton(self.top_menu, grid=[0,0], text="Voice editor", command=self.voice_editor_window)
         
-        self.sequence_editor_button = PushButton(self.top_menu, grid=[1,0], text="Sequence editor", command=self.sequence_editor_window)
+        self.sequence_editor_button = guizero.PushButton(self.top_menu, grid=[1,0], text="Sequence editor", command=self.open_sequence_editor)
 
         # set up exit function
         self.app.when_closed = self._handle_close_app
@@ -103,84 +80,42 @@ class View:
         # enter endless loop, waiting for user input via guizero widgets.
         self.app.display()
         
-    
-    def sequence_editor_window(self):
-        self.sequence_editor = Window(self.app, "Sequence editor", width = 1200, height = 750)
+        
+    def open_sequence_editor(self):
+        self.seq_editor = seq_editor.Seq_Editor(self)
+        self.seq_editor.main()
         self.sequence_window_open = True
-        self.sequence_editor.when_closed = self._closed_sequence_editor
         
-        self.seq_box = Box(self.sequence_editor, layout="grid")
-       
-        self.board = Waffle(self.seq_box, grid=[0,0], align="bottom", width=63, height=37, pad=0, dim=18, command=self._handle_set_seq_note)
-
-        self.draw_seq_keyboard(NUM_OCTAVES)
         
-        self.seq_voice_combo = Combo(self.seq_box, grid=[0,1], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
-                                     height="fill", command=self._handle_set_seq_voice)
-        
-    def draw_seq_keyboard(self, num_octaves=NUM_OCTAVES):
-        self._debug_2("In draw_seq_keyboard()")
-              
-        for i in range(12 * NUM_OCTAVES + 1):
-            if (i % 12) in [1,3,6,8,10]:
-                self.board.set_pixel(0, 12 * NUM_OCTAVES - i, "black")
-                self.board.set_pixel(1, 12 * NUM_OCTAVES - i, "black")
-                self.board.set_pixel(2, 12 * NUM_OCTAVES - i, "black")
-
-    def _closed_sequence_editor(self):
-        self._debug_1("Sequence editor closed")
-        self.sequence_window_open = False
-        self.sequence_editor.destroy()
-        
-    def _handle_set_seq_voice(self, value):
-        self._debug_2("In _handle_set_seq_voice: " + str(value))
-        # pass on the number part of the string value
-        self.controller.on_request_voice(int(value[6:]) - 1)
-    
-    def _handle_set_seq_note(self, x, y):
-        self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
-        semitone = (12 * NUM_OCTAVES) - y
-        if semitone >= 0:
-            self.controller.on_request_note(semitone)
-            if x > 2:
-                timeslot = x - 3
-                vi = self.controller.voice_index
-                old_colour = self.board.get_pixel(x, y)
-                self._debug_2("Old pixel colour = " + str(old_colour))
-                self.board.set_pixel(x, y, self.controller.voices[vi].colour)
-                self.controller.on_request_add_sequence_note(timeslot, vi, semitone)
-        else:
-            self._debug_2("Not a key")
-            
     #--------------------------------- Voice editor -------------------------                
     def voice_editor_window(self):
-        self.voice_editor = Window(self.app, "Voice editor", width = 940, height = 710)
+        self.voice_editor = guizero.Window(self.app, "Voice editor", width = 940, height = 710)
         self.voice_editor.when_closed = self._closed_voice_editor
         self.voice_window_open = True
         
-        self.panel_0 = Box(self.voice_editor, layout="grid")
+        self.panel_0 = guizero.Box(self.voice_editor, layout="grid")
         
-        self.tone_settings_panel = Box(self.panel_0, layout="grid", grid=[0,0])
+        self.tone_settings_panel = guizero.Box(self.panel_0, layout="grid", grid=[0,0])
         self._tone_settings_controls()
         
-        self.envelope_settings_panel = Box(self.panel_0, layout="grid", grid=[0,1])
+        self.envelope_settings_panel = guizero.Box(self.panel_0, layout="grid", grid=[0,1])
         self._envelope_settings_controls()
         
-        self.audio_scope = Drawing(self.panel_0, grid=[1,0], width=500, height=220)
-        self.control_scope = Drawing(self.panel_0, grid=[1,1], width=500, height=220)
+        self.audio_scope = guizero.Drawing(self.panel_0, grid=[1,0], width=500, height=220)
+        self.control_scope = guizero.Drawing(self.panel_0, grid=[1,1], width=500, height=220)
         
-        self.panel_1 = Box(self.voice_editor, layout="grid", border=10)
+        self.panel_1 = guizero.Box(self.voice_editor, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.app.bg)
-        freq_label = Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
-        self.freq_display = Text(self.panel_1, grid=[1,0], text=str(self.displayed_frequency))
-        Text(self.panel_1, grid=[2,0], text="  ")
-        duration_label = Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
-        self.duration_display = Text(self.panel_1, grid=[4,0], text="0")
-        Text(self.panel_1, grid=[5,0], text="  ")      
-        self.play_button = PushButton(self.panel_1, grid=[6,0], text="Play", command=self._handle_request_play)
-        self.sequence_button = PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self._handle_request_sequence)
+        freq_label = guizero.Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
+        self.freq_display = guizero.Text(self.panel_1, grid=[1,0], text=str(self.displayed_frequency))
+        guizero.Text(self.panel_1, grid=[2,0], text="  ")
+        duration_label = guizero.Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
+        self.duration_display = guizero.Text(self.panel_1, grid=[4,0], text="0")
+        guizero.Text(self.panel_1, grid=[5,0], text="  ")      
+        self.play_button = guizero.PushButton(self.panel_1, grid=[6,0], text="Play", command=self._handle_request_play)
+        self.sequence_button = guizero.PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self._handle_request_sequence)
                
-        self.keyboard = Drawing(self.voice_editor, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
+        self.keyboard = guizero.Drawing(self.voice_editor, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
         # Link event handler functions to events. 
         self.keyboard.when_mouse_dragged = self._handle_mouse_dragged        
@@ -191,28 +126,28 @@ class View:
         
     def _tone_settings_controls(self):
         self._debug_2("In _tone_settings_controls()")          
-        self.voice_combo = Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
                                      height="fill", command=self._handle_set_voice)
                 
-        self.waveform_combo = Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
+        self.waveform_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self._handle_set_waveform)
-        self.width_label = Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
-        self.width_slider = Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
+        self.width_label = guizero.Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
+        self.width_slider = guizero.Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
                             width=200, command=self._handle_set_width)
         self.width_slider.value = 100
 
-        self.harmonic_boost_label = Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
-        self.harmonic_boost_slider = Slider(self.tone_settings_panel, grid=[1,2], start=0, end=MAX_HARMONIC_BOOST,
+        self.harmonic_boost_label = guizero.Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
+        self.harmonic_boost_slider = guizero.Slider(self.tone_settings_panel, grid=[1,2], start=0, end=const.MAX_HARMONIC_BOOST,
                                      width=200, command=self._handle_set_harmonic_boost)
         self.harmonic_boost_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
         
-        Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
-        self.vibrato_rate_slider = Slider(self.tone_settings_panel, grid=[1,3], start=0, end=MAX_VIBRATO_RATE,
+        guizero.Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
+        self.vibrato_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
                                      width=200, command=self._handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.controller.voices[self.controller.voice_index].vibrato_rate
         
-        Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
-        self.vibrato_depth_slider = Slider(self.tone_settings_panel, grid=[1,4], start=0, end=MAX_VIBRATO_DEPTH,
+        guizero.Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = guizero.Slider(self.tone_settings_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
                                      width=200, command=self._handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.controller.voices[self.controller.voice_index].vibrato_depth
 
@@ -220,43 +155,43 @@ class View:
     def _envelope_settings_controls(self):
         self._debug_2("In _envelope_settings_controls()")
         
-        Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
-        self.attack_slider = Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=MAX_ATTACK,
+        guizero.Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
+        self.attack_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=const.MAX_ATTACK,
                                     width=200, command=self._handle_set_attack)
         self.attack_slider.value = self.controller.voices[self.controller.voice_index].attack
         
-        Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
-        self.decay_slider = Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=MAX_DECAY,
+        guizero.Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
+        self.decay_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=const.MAX_DECAY,
                                    width=200, command=self._handle_set_decay)
         self.decay_slider.value = self.controller.voices[self.controller.voice_index].decay
         
-        Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
-        self.sustain_slider = Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=MAX_SUSTAIN,
+        guizero.Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
+        self.sustain_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=const.MAX_SUSTAIN,
                                      width=200, command=self._handle_set_sustain)
         self.sustain_slider.value = self.controller.voices[self.controller.voice_index].sustain_time
 
-        Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
-        self.sustain_level_slider = Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
+        guizero.Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
+        self.sustain_level_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
                                            width=200, command=self._handle_set_sustain_level)
         self.sustain_level_slider.value = self.controller.voices[self.controller.voice_index].sustain_level
         
-        Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
-        self.release_slider = Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=MAX_RELEASE,
+        guizero.Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
+        self.release_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=const.MAX_RELEASE,
                                      width=200, command=self._handle_set_release)
         self.release_slider.value = self.controller.voices[self.controller.voice_index].release
             
-        Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
-        self.tremolo_rate_slider = Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=MAX_TREMOLO_RATE,
+        guizero.Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=const.MAX_TREMOLO_RATE,
                                      width=200, command=self._handle_set_tremolo_rate)
         self.tremolo_rate_slider.value = self.controller.voices[self.controller.voice_index].tremolo_rate
         
-        Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
-        self.tremolo_depth_slider = Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=MAX_TREMOLO_DEPTH,
+        guizero.Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=const.MAX_TREMOLO_DEPTH,
                                      width=200, command=self._handle_set_tremolo_depth)
         self.tremolo_depth_slider.value = self.controller.voices[self.controller.voice_index].tremolo_depth
          
    
-    def _draw_keyboard(self, num_octaves=NUM_OCTAVES):
+    def _draw_keyboard(self, num_octaves=const.NUM_OCTAVES):
         self._debug_2("In _draw_keyboard()")
         self.keyboard.rectangle(0, 0, KEYBOARD_WIDTH, KEYBOARD_HEIGHT, color = "green")
 
@@ -304,8 +239,7 @@ class View:
                 self.harmonic_boost_label.hide()
                 self.harmonic_boost_slider.hide()
         if self.sequence_window_open == True:
-            voice_name = "Voice " + str(self.controller.voice_index + 1)
-            self._update_combo(self.seq_voice_combo, voice_name) 
+            self.seq_editor.show_new_settings()
 
     # Put the selected option at the top of the Combo list.    
     def _update_combo(self, combo, option):
@@ -328,13 +262,13 @@ class View:
         previous_x = origin_x
         previous_y = origin_y
         # Set the number of points to plot. 
-        num_points = SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
+        num_points = const.SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
         # Increase no. of points to plot in steps of 50ms worth of samples.
         while num_points < len(envelope):
-            if num_points < SAMPLE_RATE * 0.1:
-                num_points += SAMPLE_RATE * 0.020 # add 20 msec to timescale
+            if num_points < const.SAMPLE_RATE * 0.1:
+                num_points += const.SAMPLE_RATE * 0.020 # add 20 msec to timescale
             else:
-                num_points += SAMPLE_RATE * 0.050 # add 50 msec to timescale
+                num_points += const.SAMPLE_RATE * 0.050 # add 50 msec to timescale
         # Scale down the x axis
         sub_sampling_factor = 9 # found by trial and error
         num_points = int(num_points // sub_sampling_factor) + sub_sampling_factor
@@ -374,7 +308,7 @@ class View:
         
         self.audio_scope.clear()
         self.audio_scope.bg = "dark gray"
-        self.duration_display.value = str(int(len(left_channel) * 1000 / SAMPLE_RATE))
+        self.duration_display.value = str(int(len(left_channel) * 1000 / const.SAMPLE_RATE))
         
         # Set graph origin to the middle, left edge of the drawing area.
         origin_x = 0
@@ -383,13 +317,13 @@ class View:
         previous_x = origin_x
         previous_y = origin_y
         # Set the number of points to plot. 
-        num_points = SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
+        num_points = const.SAMPLE_RATE * 0.020 # 20 miliseconds worth of input samples.
         # Increase no. of points to plot in steps of 50ms worth of samples.
         while num_points < len(left_channel):
-            if num_points < SAMPLE_RATE * 0.1:
-                num_points += SAMPLE_RATE * 0.020 # add 20 msec to timescale
+            if num_points < const.SAMPLE_RATE * 0.1:
+                num_points += const.SAMPLE_RATE * 0.020 # add 20 msec to timescale
             else:
-                num_points += SAMPLE_RATE * 0.050 # add 50 msec to timescale
+                num_points += const.SAMPLE_RATE * 0.050 # add 50 msec to timescale
         # Scale down the x axis
         sub_sampling_factor = 2 # found by trial and error
         num_points = int(num_points // sub_sampling_factor) + sub_sampling_factor
@@ -415,32 +349,10 @@ class View:
             self.audio_scope.line(previous_x, previous_y, plot_x, plot_y, color="light green", width=2)
             previous_x = plot_x
             previous_y = plot_y
-    
             
     def play_sound(self, wave):
         self._debug_2("In play_sound()")
-        global last_output_time
-        
-        if not self.sound is None:
-            self.sound.fadeout(100)
-            self.sound = None
-        # Ensure that highest value is in 16-bit range
-        max_level = np.max(np.abs(wave))
-        if max_level == 0:
-            self._debug_1("WARNING: zero waveform in play_sound().")
-            return -1
-        
-        audio = wave * (2**15 - 1) / max_level
-        # Convert to 16-bit data
-        audio = audio.astype(np.int16)
-        # create a pygame Sound object and play it.
-        sound = pygame.sndarray.make_sound(audio)
-        sound.play()
-        self.sound = sound
-        now = time.perf_counter()
-        self._debug_2("Time since last note = " + str(now-last_output_time))
-        last_output_time = now       
-        return 0
+        synth_audio.play_sound(wave)
 
     def _closed_voice_editor(self):
         self._debug_1("Voice editor closed")
@@ -449,7 +361,7 @@ class View:
  
     def shutdown(self):
         self._debug_1("Normal termination")
-        pygame.mixer.music.stop()
+        synth_audio.stop_audio_output()
         self.app.destroy()        
             
     #---------------------- Helper Functions --------------------
@@ -572,7 +484,7 @@ class View:
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
             if semitone != self.previous_key:
-                self.displayed_frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+                self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
                 self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")
@@ -582,7 +494,7 @@ class View:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         semitone = self._identify_key_number(event.x, event.y)
         if semitone >= 0:
-            self.displayed_frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)          
+            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)          
             self.controller.on_request_note(semitone)
         else:
             self._debug_2("Not a key")        
@@ -596,9 +508,9 @@ class View:
 #--------------------------- Test Functions ------------------------------
 if __name__ == "__main__":
 
-    SAMPLE_RATE = 44100
+    const.SAMPLE_RATE = 44100
     MAX_VOICES = 12
-    LOWEST_TONE = 110
+    const.LOWEST_TONE = 110
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
     DEFAULT_DECAY = 20
@@ -625,7 +537,7 @@ if __name__ == "__main__":
         
     class TestController:
         def __init__(self):
-            self.sample_rate = SAMPLE_RATE
+            self.sample_rate = const.SAMPLE_RATE
             self.frequency = DEFAULT_FREQUENCY
             self.num_voices = 1
             self.voices = []
@@ -652,7 +564,7 @@ if __name__ == "__main__":
             self.view._debug_2("Set key to " + str(key))
             # Calculate frequency to display
             self.current_key = key
-            self.displayed_frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
+            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
             self.view.show_new_settings()
         
         def on_request_width(self, width):
@@ -694,6 +606,10 @@ if __name__ == "__main__":
         def on_request_sequence(self):
             self._debug_2("Play Sequence requested.")
         
+        def on_request_add_sequence_note(self, timeslot, vi, semitone):
+            self._debug_2("Sequence note requested: timeslot, voice, semitone = "
+                          + str(timeslot) + ", " + str(vi) + ", " + str(semitone))
+            
         def on_request_shutdown(self):
             self._debug_2("Shutdown requested")
 
