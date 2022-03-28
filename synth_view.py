@@ -79,8 +79,12 @@ class View:
         if self.voice_window_open == True:
             self.voice_editor.show_new_settings()
         if self.sequence_window_open == True:
-            self.seq_editor.show_new_settings()            
+            self.seq_editor.show_sequence()            
 
+    def show_sequence(self):
+        self._debug_2("In show_sequence()")
+        if self.sequence_window_open == True:
+            self.seq_editor.show_sequence()           
 
     def show_sound(self, wave):
         if self.voice_window_open == True:
@@ -133,6 +137,7 @@ if __name__ == "__main__":
 
     const.SAMPLE_RATE = 44100
     MAX_VOICES = 12
+    MAX_TIMESLOTS = 60
     const.LOWEST_TONE = 110
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
@@ -159,6 +164,14 @@ if __name__ == "__main__":
             self.vibrato_depth = 0
             self.tremolo_rate = 0
             self.tremolo_depth = 0
+            self.harmonic_boost = 0
+            
+    class Sequence:
+        def __init__(self):
+            self.number = 0 
+            self.name = "Blank"
+            self.tempo = 100
+            self.notes = np.zeros((MAX_VOICES, MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
     class TestController:
         def __init__(self):
@@ -167,7 +180,10 @@ if __name__ == "__main__":
             self.num_voices = 1
             self.voices = []
             self.voice_index = 0
+            self.current_key = 12
+            self.num_timeslots = 60
             self.view = View(self)
+            self.sequence = Sequence()
         
         def main(self):
             self.view._debug_2("In main of test controller")
@@ -226,14 +242,21 @@ if __name__ == "__main__":
             self.view._debug_2("Set vibrato_depth to " + str(value))
            
         def on_request_play(self):
-            self.view._debug_2("Play Sound requested")
+            self.view._debug_2("Play note requested")
             
-        def on_request_sequence(self):
-            self._debug_2("Play Sequence requested.")
+        def on_request_test(self):
+            self._debug_2("Play test requested.")
         
-        def on_request_add_sequence_note(self, timeslot, vi, semitone):
+        def on_request_toggle_sequence_note(self, timeslot, vi, semitone):
             self._debug_2("Sequence note requested: timeslot, voice, semitone = "
                           + str(timeslot) + ", " + str(vi) + ", " + str(semitone))
+            
+        def on_request_tempo(self, value):
+            self.view._debug_2("Set tempo to " + str(value))
+            self.sequence.tempo = int(value)
+            
+        def on_request_play_sequence(self):
+            self.view._debug_2("Play sequence requested")
             
         def on_request_shutdown(self):
             self._debug_2("Shutdown requested")
