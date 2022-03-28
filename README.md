@@ -33,7 +33,8 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
-12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator?
+12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator,
+    quantisation?
 
 13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
@@ -41,8 +42,8 @@ If you edit the online version of this file, it may conflict with other changes 
 
 ## Known Bugs / Issues
 
-The control function _play_current_note() calls view.plot_sound() and the view function on_request_note() calls
-view.show_new_settings() which are not possible if the voice editor window is closed.
+Changing the voice causes a note to be played several times in response to each parameter that changes. Guizero seems
+to respond to the program writing new slider values in the same way as when the user manually moves the slider.
 
 The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
 
@@ -69,6 +70,10 @@ efficiently.
 
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
 in stereo.
+
+Using 1000 ms tone samples and 1 Hz frequency resolution means that the waveform passes through zero at the start and end. This
+could enable the production of notes longer than 1000 ms. Vibrato and unison should not be a problem, if the tones used are
+also multiples of 1 Hz.
 
 
 ## Notes
