@@ -29,7 +29,7 @@ NUM_WHITE_KEYS = (const.NUM_OCTAVES * 7) + 1
 NUM_BLACK_KEYS = (const.NUM_OCTAVES * 7) - 1
 NUM_KEYS = (12 * const.NUM_OCTAVES) + 1
 
-debug_level = 1
+debug_level = 2
 
 # ------------------------------
 # Module class
@@ -71,8 +71,8 @@ class Voice_Editor:
         duration_label = guizero.Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
         self.duration_display = guizero.Text(self.panel_1, grid=[4,0], text="0")
         guizero.Text(self.panel_1, grid=[5,0], text="  ")      
-        self.play_button = guizero.PushButton(self.panel_1, grid=[6,0], text="Play", command=self._handle_request_play)
-        self.sequence_button = guizero.PushButton(self.panel_1, grid=[7,0], text="Sequence", command=self._handle_request_sequence)
+        self.play_button = guizero.PushButton(self.panel_1, grid=[6,0], text="Play note", command=self._handle_request_play)
+        self.sequence_button = guizero.PushButton(self.panel_1, grid=[7,0], text="100 notes", command=self._handle_request_test)
                
         self.keyboard = guizero.Drawing(self.window, KEYBOARD_WIDTH, KEYBOARD_HEIGHT)
         self._draw_keyboard()
@@ -98,7 +98,7 @@ class Voice_Editor:
         self.harmonic_boost_label = guizero.Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
         self.harmonic_boost_slider = guizero.Slider(self.tone_settings_panel, grid=[1,2], start=0, end=const.MAX_HARMONIC_BOOST,
                                      width=200, command=self._handle_set_harmonic_boost)
-        self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
+        self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
         
         guizero.Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
         self.vibrato_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
@@ -409,10 +409,10 @@ class Voice_Editor:
         self._debug_2("In _handle_request_play()")
         self.view.controller.on_request_play()
         
-    def _handle_request_sequence(self):
-        self._debug_2("In _handle_request_sequence()")
+    def _handle_request_test(self):
+        self._debug_2("In _handle_request_test()")
         self.update_display = False
-        self.view.controller.on_request_sequence()
+        self.view.controller.on_request_test()
         self.update_display = True
                
     def _handle_mouse_dragged(self, event):
