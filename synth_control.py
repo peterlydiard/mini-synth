@@ -4,6 +4,7 @@
 
 import time
 import numpy as np
+import synth_constants as const
 from synth_view import View
 from synth_model import Model
 from synth_settings import read_synth_settings, write_synth_settings
@@ -11,17 +12,6 @@ from synth_settings import read_synth_settings, write_synth_settings
 # ------------------------------
 # Variables
 # ------------------------------
-SAMPLE_RATE = 44100
-MAX_VOICES = 12
-NUM_OCTAVES = 3
-NUM_KEYS = (12 * NUM_OCTAVES) + 1
-LOWEST_TONE = 110
-DEFAULT_FREQUENCY = 440
-DEFAULT_ATTACK = 20
-DEFAULT_DECAY = 20
-DEFAULT_SUSTAIN = 100
-DEFAULT_SUSTAIN_LEVEL = 50
-DEFAULT_RELEASE = 20
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 2
@@ -33,7 +23,7 @@ debug_level = 2
 class Voice_Parameters:
     def __init__(self):
         self.number = 0 # This number may be unrelated to the position of the voice in any lists.
-        self.name = "Unused"
+        self.name = "Blank"
         self.colour = (0,0,0)
         self.waveform = "Sine"
         self.width = 100
@@ -42,36 +32,46 @@ class Voice_Parameters:
         self.vibrato_depth = 0
         self.tremolo_rate = 0
         self.tremolo_depth = 0
-        self.attack = DEFAULT_ATTACK
-        self.decay = DEFAULT_DECAY
-        self.sustain_time = DEFAULT_SUSTAIN
-        self.sustain_level = DEFAULT_SUSTAIN_LEVEL
-        self.release = DEFAULT_RELEASE        
+        self.attack = const.DEFAULT_ATTACK
+        self.decay = const.DEFAULT_DECAY
+        self.sustain_time = const.DEFAULT_SUSTAIN
+        self.sustain_level = const.DEFAULT_SUSTAIN_LEVEL
+        self.release = const.DEFAULT_RELEASE
+        
+class Sequence:
+    def __init__(self):
+        self.number = 0 
+        self.name = "Blank"
+        self.tempo = 100
+        self.notes = np.zeros((const.MAX_VOICES, const.MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
 class Controller:
     def __init__(self):
-        self.sample_rate = SAMPLE_RATE
-        self.frequency = DEFAULT_FREQUENCY
+        self.sample_rate = const.SAMPLE_RATE
+        self.frequency = const.DEFAULT_FREQUENCY
         self.num_voices = 1
         self.current_key = 12
         self.voices = []
         self.voice_index = 0
+        self.num_timeslots = const.MAX_TIMESLOTS
         self.view = View(self)
-        self.model = Model(self, SAMPLE_RATE)
+        self.model = Model(self, const.SAMPLE_RATE)
+        self.sequence = Sequence()
         
     def main(self):
         self._debug_2("In main of controller")
         # Create a list of voice parameter objects for each voice
-        for voice_index in range(MAX_VOICES):
+        for voice_index in range(const.MAX_VOICES):
             voice_params = Voice_Parameters()
             self.voices.append(voice_params)
             self.voices[voice_index].colour = self.make_voice_colour(voice_index)
         self.restore_settings()
+        self.restore_sequence()
         self.model.main()
         self.view.main() # This function does not return control here.
         
     def make_voice_colour(self, voice_index):
-        shade_step = int(192 * 3 / MAX_VOICES)
+        shade_step = int(192 * 3 / const.MAX_VOICES)
         # start with black.
         red = 0
         blue = 0
@@ -88,7 +88,7 @@ class Controller:
     def on_request_voice(self, voice):
         self._debug_2("In on_request_voice: " + str(voice))
         vi = int(voice)
-        if vi >= 0 and vi < MAX_VOICES:
+        if vi >= 0 and vi < const.MAX_VOICES:
             self.voice_index = vi
             if vi > self.num_voices:
                 self.num_voices = vi
@@ -100,7 +100,7 @@ class Controller:
         self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
         # Calculate frequency to display
         self.current_key = key
-        self.frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
+        self.frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
         if voice_index < 0: # If no voice_index given, use last stored value.
             voice_index = self.voice_index
         self._play_current_note()            
@@ -194,16 +194,16 @@ class Controller:
         self._debug_2("In on_request_play().")
         self._play_current_note()
             
-    def on_request_sequence(self):
-        self._debug_2("In on_request_sequence().")
-        self._debug_2("\nDoing 100 note sequence")
+    def on_request_test(self):
+        self._debug_2("In on_request_test().")
+        self._debug_2("\nDoing 100 note test")
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
         next_time = start + 0.100
         time_asleep = 0
         key = 0
         while key < 100:
-            tone = self.model.fetch_tone(self.voice_index, key % NUM_KEYS)
+            tone = self.model.fetch_tone(self.voice_index, key % const.NUM_KEYS)
             note = self.model.apply_envelope(self.voice_index, tone) 
             if not note is None:
                 self.view.play_sound(note)
@@ -217,12 +217,26 @@ class Controller:
         self._debug_1("100 notes in seconds = " + str(finish - start))
         self._debug_1("Time asleep in seconds = " + str(time_asleep))
 
-    def on_request_add_sequence_note(self, timeslot, voice_index, key):
-        self._debug_2("In on_request_add_sequence_note: " + str(timeslot) + ", " + str(voice_index) + ", " + str(key))
+    def on_request_toggle_sequence_note(self, timeslot, voice_index, key):
+        self._debug_2("In on_request_toggle_sequence_note: " + str(timeslot) + ", " + str(voice_index) + ", " + str(key))
+        if self.sequence.notes[voice_index, timeslot, key] == 1:
+            self.sequence.notes[voice_index, timeslot, key] = 0
+            self._debug_2("Cleared note.")
+        else:
+            self.sequence.notes[voice_index, timeslot, key] = 1
+            self._debug_2("Set note.")
         
+    def on_request_tempo(self, value):
+        self.view._debug_2("Set tempo to " + str(value))
+        self.sequence.tempo = int(value)
+        
+    def on_request_play_sequence(self):
+        self.view._debug_2("Play sequence requested")
+            
     def on_request_shutdown(self):
         self._debug_2("Shutdown requested")
         self.save_settings()
+        self.save_sequence()
         self.view.shutdown()
     
     def save_settings(self):
@@ -283,7 +297,6 @@ class Controller:
             else:
                 for vi in range(self.num_voices):
                     name_prefix = "voice_" + str(vi) + "_"
-                    #print("name_prefix = " + name_prefix)
                     if names[i] == name_prefix + "number":
                         self.voices[vi].number = int(values[i])
                     elif names[i] == name_prefix + "name":
@@ -313,6 +326,46 @@ class Controller:
                     else:
                         pass # no error reporting!
                     
+
+    def save_sequence(self):
+        names = []
+        values = []
+        names.append("sequence_number")
+        values.append(int(self.sequence.number))
+        names.append("sequence_name")
+        values.append(self.sequence.name)
+        names.append("sequence_tempo")
+        values.append(int(self.sequence.tempo))
+        for vi in range(self.num_voices):
+            voice_name = "voice_" + str(vi) + "_"
+            for timeslot in range(self.num_timeslots):
+                timeslot_name = "timeslot_" + str(timeslot) + "_"
+                for key in range(const.NUM_KEYS):
+                    key_name = "key_" + str(key)
+                    if self.sequence.notes[vi, timeslot, key] > 0:
+                        names.append(voice_name + timeslot_name + key_name)
+                        values.append(int(self.sequence.notes[vi, timeslot, key]))
+        write_synth_settings("sequence.txt", names, values)
+
+
+    def restore_sequence(self):
+        names, values = read_synth_settings("sequence.txt")
+        for i in range(len(names)):
+            if names[i] == "sequence_number":
+                self.sequence.number = int(values[i])
+            if names[i] == "sequence_name":
+                self.sequence.name = values[i]
+            if names[i] == "sequence_tempo":
+                self.sequence.tempo = int(values[i])  
+            for vi in range(self.num_voices):
+                voice_name = "voice_" + str(vi) + "_"
+                for timeslot in range(self.num_timeslots):
+                    timeslot_name = "timeslot_" + str(timeslot) + "_"
+                    for key in range(const.NUM_KEYS):
+                        key_name = "key_" + str(key)
+                        if names[i] == voice_name + timeslot_name + key_name:
+                            self.sequence.notes[vi, timeslot, key] = values[i]
+
 
     # ------------------------------
     # Local Helper Functions
