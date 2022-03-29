@@ -17,6 +17,7 @@ debug_level = 2
 class Seq_Editor:
     def __init__(self, view):
         self.view = view
+        self.seq_voice_checks = []
        
 
     def main(self):
@@ -43,8 +44,21 @@ class Seq_Editor:
         guizero.Text(self.seq_controls, grid=[1,0], text="    ")
         self.seq_tempo_label = guizero.Text(self.seq_controls, grid=[2,0], text="Tempo, bpm")
         self.seq_tempo_slider = guizero.Slider(self.seq_controls, grid=[3,0], start=30, end=300, width=270, command=self._handle_set_tempo)
-        self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[4,0], text="Play", command=self._handle_seq_play)
-        
+        self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[4,0], text="Play", command=self._handle_play_sequence)
+        self.seq_select_box = guizero.Box(self.seq_box, grid=[0,2], layout="grid")
+        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[0,1], text="Voice 1", command=self._handle_update_board))
+        self.seq_voice_checks[0].text_color = self.view.controller.voices[0].colour
+        self.seq_voice_checks[0].value = 1
+        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[1,1], text="Voice 2", command=self._handle_update_board))
+        self.seq_voice_checks[1].text_color = self.view.controller.voices[1].colour
+        self.seq_voice_checks[1].value = 1        
+        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[2,1], text="Voice 3", command=self._handle_update_board))
+        self.seq_voice_checks[2].text_color = self.view.controller.voices[2].colour
+        self.seq_voice_checks[2].value = 1
+        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[3,1], text="Voice 4", command=self._handle_update_board))
+        self.seq_voice_checks[3].text_color = self.view.controller.voices[3].colour
+        self.seq_voice_checks[3].value = 1
+       
     def draw_seq_keyboard(self, num_octaves=const.NUM_OCTAVES):
         self._debug_2("In draw_seq_keyboard()")
               
@@ -55,13 +69,14 @@ class Seq_Editor:
                 self.board.set_pixel(2, 12 * const.NUM_OCTAVES - i, "black")
 
     def draw_seq_notes(self):
-        self._debug_2("In draw_seq_keyboard()")
+        self._debug_2("In draw_seq_notes()")
         for vi in range(self.view.controller.num_voices):
-            for timeslot in range(self.view.controller.num_timeslots):
-                for key in range(12 * const.NUM_OCTAVES + 1):
-                    if self.view.controller.sequence.notes[vi, timeslot, key] > 0:
-                        colour = self.view.controller.voices[vi].colour
-                        self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
+            if self.seq_voice_checks[vi].value == 1:
+                for timeslot in range(self.view.controller.num_timeslots):
+                    for key in range(12 * const.NUM_OCTAVES + 1):
+                        if self.view.controller.sequence.notes[vi, timeslot, key] > 0:
+                            colour = self.view.controller.voices[vi].colour
+                            self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
 
     def show_sequence(self):
         self._debug_2("In show_new_setings()")
@@ -80,16 +95,19 @@ class Seq_Editor:
     def _handle_set_seq_voice(self, value):
         self._debug_2("In _handle_set_seq_voice: " + str(value))
         # pass on the number part of the string value
-        self.view.controller.on_request_voice(int(value[6:]) - 1)
+        vi = int(value[6:]) - 1
+        self.view.controller.on_request_voice(vi)
         if self.view.voice_window_open == False:
             self.view.controller.on_request_note(15) # Illustrate new voice
+        self.seq_voice_checks[vi].value = 1
+        self.draw_seq_notes()
 
     def _handle_set_tempo(self, value):
         self._debug_2("In _handle_set_tempo()")
         self.view.controller.on_request_tempo(value)
         
         
-    def _handle_seq_play(self):
+    def _handle_play_sequence(self):
         self._debug_2("In _handle_play_sequence()")
         self.view.controller.on_request_play_sequence()
 
@@ -111,7 +129,12 @@ class Seq_Editor:
         else:
             self._debug_2("Not a key")
     
-    
+    def _handle_update_board(self):
+        self._debug_2("In _handle_update_board: ")
+        self.board.set_all("white")
+        self.draw_seq_keyboard()
+        self.draw_seq_notes()
+        
     def _debug_1(self, message):
         global debug_level
         if debug_level >= 1:
