@@ -1,12 +1,13 @@
 sequence_number,0
 sequence_name,Blank
-sequence_tempo,120
+sequence_tempo,155
 voice_0_timeslot_0_key_0,1
 voice_0_timeslot_1_key_1,1
 voice_0_timeslot_2_key_2,1
 voice_0_timeslot_3_key_3,1
 voice_0_timeslot_4_key_4,1
 voice_0_timeslot_5_key_5,1
+voice_0_timeslot_8_key_3,1
 voice_0_timeslot_12_key_3,1
 voice_0_timeslot_14_key_2,1
 voice_0_timeslot_19_key_22,1

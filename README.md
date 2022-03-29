@@ -34,7 +34,7 @@ If you edit the online version of this file, it may conflict with other changes 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
 12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator,
-    quantisation?
+    quantisation, automatic chords.
 
 13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
@@ -60,7 +60,8 @@ requires a timout event which seems to need multiprocessing in the Python progra
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
-The tone-tracking notch filter used to produce harmonic boost involves a lot more calculation to generate harmonic boost.
+The tone-tracking notch filter used to produce harmonic boost involves a lot more calculation than the previous production
+of a cancellation tone through the sine function. This copes better with vibrato and any future unison function.
 
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.
@@ -140,6 +141,10 @@ Some instruments, e.g. oboe have lower levels of the fundamental than the higher
 Roland RE201 Space Echo.
 
 In the Serum software synth, one "oscillator" can contain sine, triangle, sawtooth and squre waves in any ratio.
+
+Percussion-type voices do not necessarily need to be controlled by a keyboard.
+
+Scales could be indicated graphically on the sequence editor.
 
 ## Background reading:
 
