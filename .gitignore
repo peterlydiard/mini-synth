@@ -27,8 +27,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Synthesiser settings
+# Synthesiser data
 synth_settings.txt
+sequence.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
