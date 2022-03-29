@@ -232,6 +232,30 @@ class Controller:
         
     def on_request_play_sequence(self):
         self._debug_2("Play sequence requested")
+        timeslot = 0
+        note_spacing_secs = 60.0 / self.sequence.tempo  
+        start = time.perf_counter()
+        self._debug_1("Timer start = " + str(start))
+        next_time = start + note_spacing_secs
+        time_asleep = 0
+        while timeslot < const.MAX_TIMESLOTS:
+            self._debug_2("Timeslot = " + str(timeslot))
+            for vi in range(self.num_voices):
+                for key in range(const.NUM_KEYS):
+                    if self.sequence.notes[vi, timeslot, key] > 0:
+                        tone = self.model.fetch_tone(vi, key)
+                        note = self.model.apply_envelope(vi, tone) 
+                        if not note is None:
+                            self.view.play_sound(note)
+            now = time.perf_counter()
+            sleep_time = next_time - now
+            time_asleep += sleep_time
+            time.sleep(max(0, sleep_time))
+            next_time += note_spacing_secs
+            timeslot += 1
+        finish = time.perf_counter()
+        self._debug_1("Sequence duration, secs = " + str(finish - start))
+        self._debug_1("Time asleep in seconds = " + str(time_asleep))                               
             
     def on_request_shutdown(self):
         self._debug_2("Shutdown requested")
