@@ -28,8 +28,7 @@ share/python-wheels/
 MANIFEST
 
 # Synthesiser data
-synth_settings.txt
-sequence.txt
+*.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
