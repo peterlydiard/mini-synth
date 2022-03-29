@@ -227,11 +227,11 @@ class Controller:
             self._debug_2("Set note.")
         
     def on_request_tempo(self, value):
-        self.view._debug_2("Set tempo to " + str(value))
+        self._debug_2("Set tempo to " + str(value))
         self.sequence.tempo = int(value)
         
     def on_request_play_sequence(self):
-        self.view._debug_2("Play sequence requested")
+        self._debug_2("Play sequence requested")
             
     def on_request_shutdown(self):
         self._debug_2("Shutdown requested")
