@@ -170,6 +170,7 @@ if __name__ == "__main__":
         def __init__(self):
             self.number = 0 
             self.name = "Blank"
+            self.beats_per_bar = 4
             self.tempo = 100
             self.notes = np.zeros((MAX_VOICES, MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
@@ -251,6 +252,10 @@ if __name__ == "__main__":
             self._debug_2("Sequence note requested: timeslot, voice, semitone = "
                           + str(timeslot) + ", " + str(vi) + ", " + str(semitone))
             
+        def on_request_beats(self, value):
+            self._debug_2("Set beats/bar to " + str(value))
+            self.sequence.beats_per_bar = int(value)
+        
         def on_request_tempo(self, value):
             self.view._debug_2("Set tempo to " + str(value))
             self.sequence.tempo = int(value)
