@@ -1,25 +1,10 @@
 
 import math
 import string
-#import copy
-
 import numpy as np
+import synth_constants as const
 
 ######################### Global variables #########################
-
-LOWEST_TONE = 110
-FREQUENCY = 220    # Hz
-WIDTH = 50
-MAX_DURATION = 1000
-STEREO = False
-ATTACK = 200
-DECAY = 200
-SUSTAIN_TIME = 500
-SUSTAIN_LEVEL = 50
-RELEASE = 100
-NUM_OCTAVES = 3
-NUM_KEYS = (12 * NUM_OCTAVES) + 1
-MAX_VOICES = 4
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
 debug_level = 2
@@ -27,18 +12,19 @@ debug_level = 2
 ####################################################################
 
 class Model:
-    def __init__(self, controller, sample_rate, max_duration=MAX_DURATION, duration=MAX_DURATION, stereo=STEREO):
+    def __init__(self, controller, sample_rate, max_duration=const.MAX_ENVELOPE_TIME,
+                 duration=const.MAX_ENVELOPE_TIME, stereo=const.STEREO):
         self.controller = controller
-        self.sample_rate = sample_rate     # Hz
+        self.sample_rate = sample_rate     # Hz (also in Controller class)
         self.max_duration = max_duration   # milliseconds
         self.duration = duration           # milliseconds
         self.stereo = stereo               # Boolean
         self.envelopes = [] 
-        self.voices = np.zeros((MAX_VOICES, NUM_KEYS, (int(sample_rate * MAX_DURATION / 1000))), dtype=float)
+        self.voices = np.zeros((const.MAX_VOICES, const.NUM_KEYS, (int(sample_rate * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
 
 
-    def main(self, max_voices=MAX_VOICES):
-        for voice_index in range(MAX_VOICES):
+    def main(self, max_voices=const.MAX_VOICES):
+        for voice_index in range(const.MAX_VOICES):
             self.make_voice(voice_index)
             envelope = self.make_envelope(voice_index)
             self.envelopes.append(envelope)
@@ -176,7 +162,7 @@ class Model:
         if tone is None:
             self._debug_1("ERROR: tone is None in apply_envelope().")
             return None
-        if voice_index < 0 or voice_index > MAX_VOICES:
+        if voice_index < 0 or voice_index > const.MAX_VOICES:
             self._debug_1("ERROR: voice_index = " + str(voice_index))
             return None
         self.stereo = stereo
@@ -262,29 +248,29 @@ class Model:
     # Mark all the tones for this voice as obsolete. Obsolete tones should be remade before being played.
     def scratch_voice(self, voice_index):
         self._debug_2("In scratch_voice() ")
-        if voice_index >= MAX_VOICES:
+        if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in scratch_voice() = " + str(voice_index))
             return
-        for semitone in range(NUM_KEYS):
+        for semitone in range(const.NUM_KEYS):
             self.voices[voice_index, semitone, 0] = -5 # Set first sample to an invalid value
         
     def make_voice(self, voice_index):
         self._debug_1("In make_voice() - making voice:  " + str(voice_index))
-        if voice_index >= MAX_VOICES:
+        if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
-        for semitone in range(NUM_KEYS):
+        for semitone in range(const.NUM_KEYS):
             self.make_tone(voice_index, semitone)         
             
     def make_tone(self, voice_index, semitone):
         self._debug_2("In make_tone() ")
-        if voice_index >= MAX_VOICES:
+        if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_tone() = " + str(voice_index))
             return
-        if semitone >= NUM_KEYS:
+        if semitone >= const.NUM_KEYS:
             self._debug_1("ERROR: invalid semitone in make_tone() = " + str(semitone))
             return
-        frequency = int((LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+        frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
         waveform = self.controller.voices[voice_index].waveform
         width = self.controller.voices[voice_index].width
         if waveform == "Sine":
@@ -306,10 +292,10 @@ class Model:
             
     def fetch_tone(self, voice_index, semitone):
         self._debug_2("In fetch_tone()")
-        if voice_index >= MAX_VOICES:
+        if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in fetch_tone() = " + str(voice_index))
             return None
-        if semitone >= NUM_KEYS:
+        if semitone >= const.NUM_KEYS:
             self._debug_1("ERROR: invalid semitone number in fetch_tone() = " + str(semitone))
             return None
         tone = self.voices[voice_index, semitone]
@@ -336,21 +322,15 @@ if __name__ == "__main__":
     
     SAMPLE_RATE = 44100 # Hz
     FREQUENCY = 220    # Hz
-    WIDTH = 50
+    DEFAULT_WIDTH = 100
     DURATION = 1000
     STEREO = True
-    ATTACK = 200
-    DECAY = 200
-    SUSTAIN_TIME = 500
-    SUSTAIN_LEVEL = 50
-    RELEASE = 100
     
     MAX_VOICES = 12
     NUM_OCTAVES = 3
     NUM_KEYS = (12 * NUM_OCTAVES) + 1
     LOWEST_TONE = 110
     
-    MAX_VOICES = 12
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
     DEFAULT_DECAY = 20
@@ -363,7 +343,7 @@ if __name__ == "__main__":
             self.number = 0 # This number may be unrelated to the position of the voice in any lists.
             self.name = "Unused"
             self.waveform = "Sine"
-            self.width = 100
+            self.width = DEFAULT_WIDTH
             self.harmonic_boost = 0
             self.vibrato_rate = 0
             self.vibrato_depth = 0
