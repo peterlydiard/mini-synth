@@ -42,6 +42,7 @@ class Sequence:
     def __init__(self):
         self.number = 0 
         self.name = "Blank"
+        self.beats_per_bar = 4
         self.tempo = 100
         self.notes = np.zeros((const.MAX_VOICES, const.MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
@@ -226,6 +227,10 @@ class Controller:
             self.sequence.notes[voice_index, timeslot, key] = 1
             self._debug_2("Set note.")
         
+    def on_request_beats(self, value):
+        self._debug_2("Set beats/bar to " + str(value))
+        self.sequence.beats_per_bar = int(value)
+        
     def on_request_tempo(self, value):
         self._debug_2("Set tempo to " + str(value))
         self.sequence.tempo = int(value)
@@ -233,7 +238,7 @@ class Controller:
     def on_request_play_sequence(self):
         self._debug_2("Play sequence requested")
         timeslot = 0
-        note_spacing_secs = 60.0 / self.sequence.tempo  
+        note_spacing_secs = 60.0 / (self.sequence.tempo * self.sequence.beats_per_bar)
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
         next_time = start + note_spacing_secs
@@ -358,6 +363,8 @@ class Controller:
         values.append(int(self.sequence.number))
         names.append("sequence_name")
         values.append(self.sequence.name)
+        names.append("beats_per_bar")
+        values.append(int(self.sequence.beats_per_bar))
         names.append("sequence_tempo")
         values.append(int(self.sequence.tempo))
         for vi in range(self.num_voices):
@@ -379,8 +386,10 @@ class Controller:
                 self.sequence.number = int(values[i])
             if names[i] == "sequence_name":
                 self.sequence.name = values[i]
+            if names[i] == "beats_per_bar":
+                self.sequence.beats_per_bar = int(values[i])  
             if names[i] == "sequence_tempo":
-                self.sequence.tempo = int(values[i])  
+                self.sequence.tempo = int(values[i])
             for vi in range(self.num_voices):
                 voice_name = "voice_" + str(vi) + "_"
                 for timeslot in range(self.num_timeslots):
