@@ -42,9 +42,12 @@ class Seq_Editor:
         self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
                                      height="fill", command=self._handle_set_seq_voice)
         guizero.Text(self.seq_controls, grid=[1,0], text="    ")
-        self.seq_tempo_label = guizero.Text(self.seq_controls, grid=[2,0], text="Tempo, bpm")
-        self.seq_tempo_slider = guizero.Slider(self.seq_controls, grid=[3,0], start=30, end=300, width=270, command=self._handle_set_tempo)
-        self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[4,0], text="Play", command=self._handle_play_sequence)
+        self.seq_beats_combo = guizero.Combo(self.seq_controls, grid=[2,0], options=["3 beats/bar", "4 beats/bar", "5 beats/bar"],
+                                     height="fill", command=self._handle_set_seq_beats)
+        guizero.Text(self.seq_controls, grid=[3,0], text="    ")
+        self.seq_tempo_label = guizero.Text(self.seq_controls, grid=[4,0], text="Tempo, bpm")
+        self.seq_tempo_slider = guizero.Slider(self.seq_controls, grid=[5,0], start=30, end=200, width=342, command=self._handle_set_tempo)
+        self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[6,0], text="Play", command=self._handle_play_sequence)
         self.seq_select_box = guizero.Box(self.seq_box, grid=[0,2], layout="grid")
         self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[0,1], text="Voice 1", command=self._handle_update_board))
         self.seq_voice_checks[0].text_color = self.view.controller.voices[0].colour
@@ -67,6 +70,20 @@ class Seq_Editor:
                 self.board.set_pixel(0, 12 * const.NUM_OCTAVES - i, "black")
                 self.board.set_pixel(1, 12 * const.NUM_OCTAVES - i, "black")
                 self.board.set_pixel(2, 12 * const.NUM_OCTAVES - i, "black")
+                
+    def draw_seq_octaves(self):
+        self._debug_2("In draw_seq_octaves()")
+        for i in range(const.NUM_OCTAVES + 1):
+            key = 12 * i
+            for timeslot in range(self.view.controller.num_timeslots + 3):
+                self.board.set_pixel(timeslot, const.NUM_KEYS - 1 - key, (230,230,230))
+        
+    def draw_seq_bars(self):
+        self._debug_2("In draw_seq_bars()")
+        for timeslot in range(self.view.controller.num_timeslots):
+            if (timeslot % self.view.controller.sequence.beats_per_bar == 0):
+                for key in range(12 * const.NUM_OCTAVES + 1):
+                    self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, (230,230,230))
 
     def draw_seq_notes(self):
         self._debug_2("In draw_seq_notes()")
@@ -79,11 +96,13 @@ class Seq_Editor:
                             self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
 
     def show_sequence(self):
-        self._debug_2("In show_new_setings()")
+        self._debug_2("In show_sequence()")
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.seq_voice_combo, voice_name)
         self.seq_tempo_slider.value = self.view.controller.sequence.tempo
-        self.draw_seq_notes()
+        beats_name = str(self.view.controller.sequence.beats_per_bar) + " beats/bar"
+        self.view.update_combo(self.seq_beats_combo, beats_name)
+        self._handle_update_board()
 
 
     def _closed_sequence_editor(self):
@@ -102,6 +121,13 @@ class Seq_Editor:
         self.seq_voice_checks[vi].value = 1
         self.draw_seq_notes()
 
+
+    def _handle_set_seq_beats(self, value):
+        self._debug_2("In _handle_set_beats()")
+        self.view.controller.on_request_beats(value[:1])
+        self._handle_update_board()
+        
+        
     def _handle_set_tempo(self, value):
         self._debug_2("In _handle_set_tempo()")
         self.view.controller.on_request_tempo(value)
@@ -132,6 +158,8 @@ class Seq_Editor:
     def _handle_update_board(self):
         self._debug_2("In _handle_update_board: ")
         self.board.set_all("white")
+        self.draw_seq_bars()
+        self.draw_seq_octaves()
         self.draw_seq_keyboard()
         self.draw_seq_notes()
         
