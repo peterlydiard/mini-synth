@@ -34,7 +34,7 @@ If you edit the online version of this file, it may conflict with other changes 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
 12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator,
-    quantisation, automatic chords.
+    quantisation, automatic chords, note length control in sequencer?
 
 13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
@@ -45,9 +45,10 @@ If you edit the online version of this file, it may conflict with other changes 
 Changing the voice causes a note to be played several times in response to each parameter that changes. Guizero seems
 to respond to the program writing new slider values in the same way as when the user manually moves the slider.
 
-The Model class has copies of some parameters that are in the Voice class. This may be unecessary.
+The Model class has copies of some parameters that are in the Controller class. This may be unecessary.
 
-The view and model objects read voice parameters directly from the controller object. Is this bad practice?
+The view and model objects read parameters directly from the controller object. This would make thorough testing
+of those modules more difficult as they rely on 'hidden' inputs.
 
 Variables called key and semitone often refer to the same data. This is confusing.
 
