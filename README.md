@@ -1,8 +1,8 @@
 # mini-synth
 
-Simple sound synthesiser using pygame and guizero
+Simple sound synthesiser using guizero and pygame (mixer)
 
-Other required modules: numpy
+Other required modules: numpy, time
 
 ## Warning
 
@@ -33,12 +33,14 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
-12. Stereo panning, ring modulator, phasing, chorus, unison, reverb, resonnance filter module, sub-oscillator,
-    quantisation, automatic chords, note length control in sequencer?
+12. Tone generator additions: ring modulator, unison, sub-oscillator, quantisation, automatic chords, chorus?
 
-13. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
+13. Stereo panning, phasing, chorus, unison, reverb, resonnance filter module,
+    note length control in sequencer?
 
-14. Algorithmic sequence generation, e.g. using Conways Game of Life?
+14. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
+
+15. Algorithmic sequence generation, e.g. using Conways Game of Life?
 
 ## Known Bugs / Issues
 
@@ -62,7 +64,7 @@ requires a timout event which seems to need multiprocessing in the Python progra
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
 The tone-tracking notch filter used to produce harmonic boost involves a lot more calculation than the previous production
-of a cancellation tone through the sine function. This copes better with vibrato and any future unison function.
+of a cancellation tone through the sine function. This copes better with vibrato and any future unison function, however.
 
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.
@@ -71,12 +73,17 @@ All tones are generated 1000 ms long, regardless of the length of any notes usin
 efficiently.
 
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
-in stereo.
+in stereo. Also, should the detuning be an absolute frequency or proportional to the tone? 1 Hz steps would be convenient.
 
 Using 1000 ms tone samples and 1 Hz frequency resolution means that the waveform passes through zero at the start and end. This
 could enable the production of notes longer than 1000 ms. Vibrato and unison should not be a problem, if the tones used are
 also multiples of 1 Hz.
 
+The tempo parameter is labelled with beats per minute and treated as bars per minute. There is also a separate beats per bar
+parameter, being used as the number of notes per bar in the sequencer. All very confusing!
+
+If quantisation is used, should this be before or after envelope shaping and mixing? If before, this would give a more consistent
+effect.
 
 ## Notes
 
