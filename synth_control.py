@@ -32,6 +32,7 @@ class Voice_Parameters:
         self.vibrato_depth = 0
         self.tremolo_rate = 0
         self.tremolo_depth = 0
+        self.ring_mod_rate = 0
         self.attack = const.DEFAULT_ATTACK
         self.decay = const.DEFAULT_DECAY
         self.sustain_time = const.DEFAULT_SUSTAIN
@@ -183,8 +184,15 @@ class Controller:
         self.voices[self.voice_index].vibrato_depth = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
+        
+    def on_request_ring_mod_rate(self, value):
+        self._debug_2("In on_request_ring_mod_rate: " + str(value))
+        self.voices[self.voice_index].ring_mod_rate = int(value)
+        self.model.scratch_voice(self.voice_index)
+        self._play_current_note()
                    
     def _play_current_note(self):
+        self._debug_2("In _play_current_note().")        
         tone = self.model.fetch_tone(self.voice_index, self.current_key)
         note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
@@ -296,6 +304,8 @@ class Controller:
             values.append(int(self.voices[vi].vibrato_rate))
             names.append(name_prefix + "vibrato_depth")
             values.append(int(self.voices[vi].vibrato_depth))
+            names.append(name_prefix + "ring_mod_rate")
+            values.append(int(self.voices[vi].ring_mod_rate))
             names.append(name_prefix + "tremolo_rate")
             values.append(int(self.voices[vi].tremolo_rate))
             names.append(name_prefix + "tremolo_depth")
@@ -340,6 +350,8 @@ class Controller:
                         self.voices[vi].vibrato_rate = int(values[i])
                     elif names[i] == name_prefix + "vibrato_depth":
                         self.voices[vi].vibrato_depth = int(values[i])
+                    elif names[i] == name_prefix + "ring_mod_rate":
+                        self.voices[vi].ring_mod_rate = int(values[i])
                     elif names[i] == name_prefix + "tremolo_rate":
                         self.voices[vi].tremolo_rate = int(values[i])
                     elif names[i] == name_prefix + "tremolo_depth":
