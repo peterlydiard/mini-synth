@@ -48,6 +48,7 @@ class Model:
         # Generate a sine wave
         radians_per_sec = 2 * np.pi * frequency
         tone = np.sin(radians_per_sec * times_with_vibrato)
+        
         return tone
 
 
@@ -155,6 +156,17 @@ class Model:
             x1 = x0
         
         return band_pass
+
+
+    # Multiply input tone by ring modulator tone if selected
+    def apply_ring_modulation(self, tone, frequency, ring_mod_rate):
+        self._debug_2("In apply_ring_modulation() ")
+        # Generate array with duration*sample_rate steps, ranging between 0 and duration
+        times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
+        ring_mod_radians_per_sec = 2 * np.pi * frequency * ring_mod_rate / 100
+        ring_mod_tone = np.sin(ring_mod_radians_per_sec * times_sec)
+        output = np.multiply(tone, ring_mod_tone)
+        return output
     
     # Apply the envelope amplitude to the tone to make a note
     def apply_envelope(self, voice_index, tone, stereo=True):
@@ -283,12 +295,19 @@ class Model:
             tone = self._pwm_square_wave(frequency, width)
         else:
             self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
+
         # If boosting harmonics, suppress the tone fundamental frequency.
         harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
         if waveform != "Sine" and harmonic_boost > 0:
-            self.voices[voice_index, semitone] = self.suppress_fundamental(tone, frequency)
-        else:
-            self.voices[voice_index, semitone] = tone
+            tone = self.suppress_fundamental(tone, frequency)
+
+        # Multiply tone by a sine wave proportional to the base tone frequency
+        ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
+        if ring_mod_rate > 0:
+            tone = self.apply_ring_modulation(tone, frequency, ring_mod_rate)
+            
+        # Save tone in voices array    
+        self.voices[voice_index, semitone] = tone
             
     def fetch_tone(self, voice_index, semitone):
         self._debug_2("In fetch_tone()")
