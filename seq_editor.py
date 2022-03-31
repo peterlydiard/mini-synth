@@ -41,7 +41,8 @@ class Seq_Editor:
         self.seq_controls = guizero.Box(self.seq_box, grid=[0,1], layout="grid")
         self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
                                      height="fill", command=self._handle_set_seq_voice)
-        guizero.Text(self.seq_controls, grid=[1,0], text="    ")
+        self.seq_voice_text = guizero.Text(self.seq_controls, grid=[1,0], text="    ",
+                                           bg=self.view.controller.voices[self.view.controller.voice_index].colour)
         self.seq_beats_combo = guizero.Combo(self.seq_controls, grid=[2,0], options=["3 beats/bar", "4 beats/bar", "5 beats/bar"],
                                      height="fill", command=self._handle_set_seq_beats)
         guizero.Text(self.seq_controls, grid=[3,0], text="    ")
@@ -99,6 +100,7 @@ class Seq_Editor:
         self._debug_2("In show_sequence()")
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.seq_voice_combo, voice_name)
+        self.seq_voice_text.bg = self.view.controller.voices[self.view.controller.voice_index].colour
         self.seq_tempo_slider.value = self.view.controller.sequence.tempo
         beats_name = str(self.view.controller.sequence.beats_per_bar) + " beats/bar"
         self.view.update_combo(self.seq_beats_combo, beats_name)
