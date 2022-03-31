@@ -258,6 +258,33 @@ class Model:
         
         return low_pass[2:], high_pass[2:], band_pass[2:], notch[2:]
 
+
+    def low_high_pass_filters(self, tone, freq_control):
+        self._debug_2("In low_high_pass_filters")
+        # Truncate raw tone to length of control waveform
+        tone = tone[:len(freq_control)]
+        
+        # Calculate low pass filter coefficients (time-varying).
+        alpha = np.zeros(len(freq_control))
+        for i in range(len(freq_control)):
+            alpha[i] = min(1.0, math.pow(freq_control[i], 1.5) / 16.5)
+        self._debug_2("LPF signal length = " + str(len(tone)))
+        
+        # Clear stores for HP and LP outputs.
+        high_pass = np.zeros(len(tone) + 2)
+        low_pass = np.zeros(len(tone) + 2)
+        x0 = x1 = x2 = x3 = x4 = 0
+        
+        for i in range(len(tone)-2):
+            x0 = (alpha[i] * tone[i]) + ((1.0 - alpha[i]) * x1) 
+            x2 = (alpha[i] * x1) + ((1.0 - alpha[i]) * x3)
+            low_pass[i] = x3
+            high_pass[i] = tone[i] - x2
+            x3 = x2
+            x1 = x0
+        
+        return low_pass[2:], high_pass[2:]
+
     # Notch Filter.
     # tone = input waveform to be filtered
     # freq_control = control signal to set filter centre frequency notch filter. Range = 0 to about 7.5, with one
