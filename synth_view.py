@@ -13,7 +13,7 @@ import seq_editor
 # Variables
 # ------------------------------
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-sv_debug_level = 1
+sv_debug_level = 2
 # ------------------------------
 #  Notes:
 #  
