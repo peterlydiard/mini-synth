@@ -110,6 +110,12 @@ class Voice_Editor:
                                      width=200, command=self._handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
 
+        guizero.Text(self.tone_settings_panel, grid=[0,5], text="Ring modulation rate, %: ")
+        self.ring_mod_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,5], start=0, end=const.MAX_RING_MOD_RATE,
+                                     width=200, command=self._handle_set_ring_mod_rate)
+        self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
+        
+ 
 
     def _envelope_settings_controls(self):
         self._debug_2("In _envelope_settings_controls()")
@@ -179,6 +185,7 @@ class Voice_Editor:
         self.release_slider.value = self.view.controller.voices[self.view.controller.voice_index].release
         self.vibrato_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
         self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
+        self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
         self.tremolo_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_rate
         self.tremolo_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_depth
         self.freq_display.value = int(self.view.displayed_frequency)
@@ -404,6 +411,10 @@ class Voice_Editor:
     def _handle_set_vibrato_depth(self, value):
         self._debug_2("In _handle_set_vibrato_depth()")
         self.view.controller.on_request_vibrato_depth(int(value))
+        
+    def _handle_set_ring_mod_rate(self, value):
+        self._debug_2("In _handle_set_ring_mod_rate()")
+        self.view.controller.on_request_ring_mod_rate(int(value))
         
     def _handle_request_play(self):
         self._debug_2("In _handle_request_play()")
