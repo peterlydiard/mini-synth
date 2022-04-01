@@ -39,7 +39,11 @@ class Seq_Editor:
         self.draw_seq_keyboard(const.NUM_OCTAVES)
         
         self.seq_controls = guizero.Box(self.seq_box, grid=[0,1], layout="grid")
-        self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+        voice_name_list = []
+        for i in range(self.view.controller.num_voices):
+            voice_name = "Voice " + str(i+1)
+            voice_name_list.append(voice_name)
+        self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=voice_name_list,
                                      height="fill", command=self._handle_set_seq_voice)
         self.seq_voice_text = guizero.Text(self.seq_controls, grid=[1,0], text="    ",
                                            bg=self.view.controller.voices[self.view.controller.voice_index].colour)
@@ -50,18 +54,12 @@ class Seq_Editor:
         self.seq_tempo_slider = guizero.Slider(self.seq_controls, grid=[5,0], start=30, end=200, width=342, command=self._handle_set_tempo)
         self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[6,0], text="Play", command=self._handle_play_sequence)
         self.seq_select_box = guizero.Box(self.seq_box, grid=[0,2], layout="grid")
-        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[0,1], text="Voice 1", command=self._handle_update_board))
-        self.seq_voice_checks[0].text_color = self.view.controller.voices[0].colour
-        self.seq_voice_checks[0].value = 1
-        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[1,1], text="Voice 2", command=self._handle_update_board))
-        self.seq_voice_checks[1].text_color = self.view.controller.voices[1].colour
-        self.seq_voice_checks[1].value = 1        
-        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[2,1], text="Voice 3", command=self._handle_update_board))
-        self.seq_voice_checks[2].text_color = self.view.controller.voices[2].colour
-        self.seq_voice_checks[2].value = 1
-        self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[3,1], text="Voice 4", command=self._handle_update_board))
-        self.seq_voice_checks[3].text_color = self.view.controller.voices[3].colour
-        self.seq_voice_checks[3].value = 1
+        for i in range(self.view.controller.num_voices):
+            voice_name = "Voice " + str(i+1)
+            self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[i,1], text=voice_name, command=self._handle_update_board))
+            self.seq_voice_checks[i].text_color = self.view.controller.voices[i].colour
+            self.seq_voice_checks[i].value = 1
+            
        
     def draw_seq_keyboard(self, num_octaves=const.NUM_OCTAVES):
         self._debug_2("In draw_seq_keyboard()")

@@ -73,19 +73,32 @@ class Controller:
         self.view.main() # This function does not return control here.
         
     def make_voice_colour(self, voice_index):
-        shade_step = int(192 * 3 / const.MAX_VOICES)
+        shade_step = int(256 / const.MAX_VOICES)
         # start with black.
         red = 0
         blue = 0
         green = 0 
-        # Pick bright colours in rotation making the colours components darker for higher voices.
+        # Calculate unique colours for each voice.
         if (voice_index % 3) == 0:
-            red = 255 - int(voice_index * shade_step)
-        if ((voice_index+1) % 3) == 0:
-            green = 255 - int (voice_index * shade_step)
+            red = max(30, 255 - int(voice_index * shade_step))
+            green = min(255, int(voice_index * shade_step))
         if ((voice_index+2) % 3) == 0:
-            blue = 255 - int (voice_index * shade_step)
+            green = max(30, 255 - int ((voice_index) * shade_step))
+            blue = min(255, int((voice_index - 1) * shade_step))
+        if ((voice_index+1) % 3) == 0:
+            blue = max(30, 255 - int ((voice_index) * shade_step))
+            red = min(255, int((voice_index - 2) * shade_step))
+        self._debug_2("Made colour: (" + str(red) + ", " + str(green) + ", " + str(blue) + ")")
         return (red, green, blue)
+        
+    def on_request_new_voice(self):
+        self._debug_2("In on_request_new_voice() ")
+        if self.num_voices < const.MAX_VOICES:
+            self.voice_index = self.num_voices
+            self.num_voices += 1
+            self.view.show_new_settings()
+        else:
+            self._debug_1("WARNING: number of voices is at maximum already.")
         
     def on_request_voice(self, voice):
         self._debug_2("In on_request_voice: " + str(voice))
@@ -330,9 +343,9 @@ class Controller:
             elif names[i] == "frequency":
                 self.frequency = int(values[i])
             elif names[i] == "num_voices":
-                self.num_voices = int(values[i])
+                self.num_voices = min(int(values[i]), const.MAX_VOICES)
             elif names[i] == "voice_index":
-                self.voice_index = int(values[i])
+                self.voice_index = min(int(values[i]), self.num_voices - 1)
             else:
                 for vi in range(self.num_voices):
                     name_prefix = "voice_" + str(vi) + "_"

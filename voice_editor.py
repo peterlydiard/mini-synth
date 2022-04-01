@@ -84,11 +84,16 @@ class Voice_Editor:
         
         
     def _tone_settings_controls(self):
-        self._debug_2("In _tone_settings_controls()")          
-        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[0,0], options=["Voice 1", "Voice 2", "Voice 3", "Voice 4"],
+        self._debug_2("In _tone_settings_controls()")
+        self.new_voice_button = guizero.PushButton(self.tone_settings_panel, grid=[0,0], text="New Voice", command=self._handle_new_voice)
+        voice_name_list = []
+        for i in range(self.view.controller.num_voices):
+            voice_name = "Voice " + str(i+1)
+            voice_name_list.append(voice_name)
+        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=voice_name_list,
                                      height="fill", command=self._handle_set_voice)
                 
-        self.waveform_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=["Sine","Triangle","Sawtooth","Square"],
+        self.waveform_combo = guizero.Combo(self.tone_settings_panel, grid=[2,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self._handle_set_waveform)
         self.width_label = guizero.Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
         self.width_slider = guizero.Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
@@ -189,6 +194,13 @@ class Voice_Editor:
 
     def show_new_settings(self):
         self._debug_2("In show_new_setings()")
+        voice_name_list = []
+        for i in range(self.view.controller.num_voices):
+            voice_name = "Voice " + str(i+1)
+            voice_name_list.append(voice_name)
+        self.voice_combo.destroy()
+        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=voice_name_list,
+                                     height="fill", command=self._handle_set_voice)
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.voice_combo, voice_name)
         waveform = self.view.controller.voices[self.view.controller.voice_index].waveform
@@ -367,7 +379,11 @@ class Voice_Editor:
         
     #-------------------- Event Handlers --------------------
        
-
+    def _handle_new_voice(self):
+        self._debug_2("In _handle_new_voice()")
+        # Request new voice
+        self.view.controller.on_request_new_voice()        
+        
     def _handle_set_voice(self, value):
         self._debug_2("In _handle_set_voice()")
         # pass on the number part of the string value
