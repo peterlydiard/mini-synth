@@ -33,10 +33,9 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
-12. Tone generator additions: ring modulator, unison, sub-oscillator, quantisation, automatic chords, chorus?
+12. Tone generator additions: ring modulator (done), unison, sub-oscillator, quantisation, automatic chords, chorus?
 
-13. Stereo panning, phasing, chorus, unison, reverb, resonnance filter module,
-    note length control in sequencer?
+13. Stereo panning, phasing, reverb, resonnance filter module, note length control in sequencer?
 
 14. Spectrum analysis and display? Probably too much processing, except during voice editing perhaps.
 
