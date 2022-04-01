@@ -47,7 +47,10 @@ class Model:
         
         # Generate a sine wave
         radians_per_sec = 2 * np.pi * frequency
-        tone = np.sin(radians_per_sec * times_with_vibrato)
+        if const.VIBRATO_ENABLED:
+            tone = np.sin(radians_per_sec * times_with_vibrato)
+        else:
+            tone = np.sin(radians_per_sec * times_sec)
         
         return tone
 
@@ -69,7 +72,10 @@ class Model:
         self._debug_2("Vibrato tone (min, max) = (" + str(min(vibrato_tone)) + ", " + str(max(vibrato_tone)) + ")") 
         # Generate a triangle wave
         ramp_with_vibrato = ramp + vibrato_tone
-        tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1       
+        if const.VIBRATO_ENABLED:
+            tone = abs(((2 * ramp_with_vibrato + 3 ) % 4.0) - 2) - 1
+        else:
+            tone = abs(((2 * ramp + 3 ) % 4.0) - 2) - 1
         return tone
     
     # Create a unit-amplitude sawtooth wave with pulse width control, vibrato and harmonic boost.
@@ -88,7 +94,10 @@ class Model:
         vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
         
         # Generate a sawtooth wave
-        tone = np.clip((100/width) * (((ramp + vibrato_tone) % 2.0) + width/100 - 2.0), -1.0, 1.0)
+        if const.VIBRATO_ENABLED:
+            tone = np.clip((100/width) * (((ramp + vibrato_tone) % 2.0) + width/100 - 2.0), -1.0, 1.0)
+        else:
+            tone = np.clip((100/width) * ((ramp % 2.0) + width/100 - 2.0), -1.0, 1.0)
         return tone
     
     
@@ -108,7 +117,10 @@ class Model:
         vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
         
         # Generate a square wave, clip sine to avoid using scipy library.
-        tone = np.clip(1000 * (((ramp + vibrato_tone) % 2.0) + (width/100) - 2.0), -1.0, 1.0)
+        if const.VIBRATO_ENABLED:
+            tone = np.clip(1000 * (((ramp + vibrato_tone) % 2.0) + (width/100) - 2.0), -1.0, 1.0)
+        else:
+            tone = np.clip(1000 * ((ramp % 2.0) + (width/100) - 2.0), -1.0, 1.0)
         return tone
     
     # Suppress the fundamental frequency and amplify the result to boost the harmonics.
@@ -297,14 +309,16 @@ class Model:
             self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
 
         # If boosting harmonics, suppress the tone fundamental frequency.
-        harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
-        if waveform != "Sine" and harmonic_boost > 0:
-            tone = self.suppress_fundamental(tone, frequency)
+        if const.HARMONIC_BOOST_ENABLED:
+            harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
+            if waveform != "Sine" and harmonic_boost > 0:
+                tone = self.suppress_fundamental(tone, frequency)
 
         # Multiply tone by a sine wave proportional to the base tone frequency
-        ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
-        if ring_mod_rate > 0:
-            tone = self.apply_ring_modulation(tone, frequency, ring_mod_rate)
+        if const.RING_MODULATION_ENABLED:
+            ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
+            if ring_mod_rate > 0:
+                tone = self.apply_ring_modulation(tone, frequency, ring_mod_rate)
             
         # Save tone in voices array    
         self.voices[voice_index, semitone] = tone

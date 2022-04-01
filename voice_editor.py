@@ -100,22 +100,32 @@ class Voice_Editor:
                                      width=200, command=self._handle_set_harmonic_boost)
         self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
         
-        guizero.Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
+        self.vibrato_rate_label = guizero.Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
         self.vibrato_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
                                      width=200, command=self._handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
         
-        guizero.Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
+        self.vibrato_depth_label = guizero.Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
         self.vibrato_depth_slider = guizero.Slider(self.tone_settings_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
                                      width=200, command=self._handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
 
-        guizero.Text(self.tone_settings_panel, grid=[0,5], text="Ring modulation rate, %: ")
+        self.ring_mod_label = guizero.Text(self.tone_settings_panel, grid=[0,5], text="Ring modulation rate, %: ")
         self.ring_mod_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,5], start=0, end=const.MAX_RING_MOD_RATE,
                                      width=200, command=self._handle_set_ring_mod_rate)
         self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
         
- 
+        if not const.HARMONIC_BOOST_ENABLED:
+            self.harmonic_boost_label.hide()
+            self.harmonic_boost_slider.hide()
+        if not const.VIBRATO_ENABLED:
+            self.vibrato_rate_label.hide()
+            self.vibrato_rate_slider.hide()
+            self.vibrato_depth_label.hide()
+            self.vibrato_depth_slider.hide()
+        if not const.RING_MODULATION_ENABLED:
+            self.ring_mod_label.hide()
+            self.ring_mod_rate_slider.hide()            
 
     def _envelope_settings_controls(self):
         self._debug_2("In _envelope_settings_controls()")
@@ -145,16 +155,21 @@ class Voice_Editor:
                                      width=200, command=self._handle_set_release)
         self.release_slider.value = self.view.controller.voices[self.view.controller.voice_index].release
             
-        guizero.Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
+        self.tremolo_rate_label = guizero.Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
         self.tremolo_rate_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=const.MAX_TREMOLO_RATE,
                                      width=200, command=self._handle_set_tremolo_rate)
         self.tremolo_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_rate
         
-        guizero.Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
+        self.tremolo_depth_label = guizero.Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
         self.tremolo_depth_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=const.MAX_TREMOLO_DEPTH,
                                      width=200, command=self._handle_set_tremolo_depth)
         self.tremolo_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_depth
-         
+        
+        if not const.TREMOLO_ENABLED:
+            self.tremolo_rate_label.hide()
+            self.tremolo_rate_slider.hide()    
+            self.tremolo_depth_label.hide()
+            self.tremolo_depth_slider.hide()           
    
     def _draw_keyboard(self, num_octaves=const.NUM_OCTAVES):
         self._debug_2("In _draw_keyboard()")
@@ -196,7 +211,7 @@ class Voice_Editor:
         else:
             self.width_label.hide()
             self.width_slider.hide()
-        if not waveform == "Sine":
+        if not waveform == "Sine" and const.HARMONIC_BOOST_ENABLED:
             self.harmonic_boost_label.show()
             self.harmonic_boost_slider.show()
             self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
