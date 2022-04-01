@@ -294,20 +294,41 @@ class Model:
         if semitone >= const.NUM_KEYS:
             self._debug_1("ERROR: invalid semitone in make_tone() = " + str(semitone))
             return
-        frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
         waveform = self.controller.voices[voice_index].waveform
         width = self.controller.voices[voice_index].width
-        if waveform == "Sine":
-            tone = self._sine_wave(frequency)
-        elif waveform == "Triangle":
-            tone = self._triangle_wave(frequency)
-        elif waveform == "Sawtooth":
-            tone = self._pwm_sawtooth_wave(frequency, width)
-        elif waveform == "Square":
-            tone = self._pwm_square_wave(frequency, width)
+        centre_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+        unison_voices = self.controller.voices[voice_index].unison_voices
+        unison_detune = self.controller.voices[voice_index].unison_detune
+        if unison_voices > 1 and unison_detune > 0:
+            frequency = int((centre_frequency * (100 - unison_detune) / 100) + 0.5)
+            frequency_step = int((centre_frequency * 2 * unison_detune / (100 * (unison_voices - 1))) + 0.5)
+            tone = np.zeros(((int(const.SAMPLE_RATE * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
+            for i in range(unison_voices): 
+                if waveform == "Sine":
+                    unison_tone = self._sine_wave(frequency)
+                elif waveform == "Triangle":
+                    unison_tone = self._triangle_wave(frequency)
+                elif waveform == "Sawtooth":
+                    unison_tone = self._pwm_sawtooth_wave(frequency, width)
+                elif waveform == "Square":
+                    unison_tone = self._pwm_square_wave(frequency, width)
+                else:
+                    self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
+                frequency += frequency_step
+                tone += unison_tone
         else:
-            self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
-
+            frequency = centre_frequency
+            if waveform == "Sine":
+                tone = self._sine_wave(frequency)
+            elif waveform == "Triangle":
+                tone = self._triangle_wave(frequency)
+            elif waveform == "Sawtooth":
+                tone = self._pwm_sawtooth_wave(frequency, width)
+            elif waveform == "Square":
+                tone = self._pwm_square_wave(frequency, width)
+            else:
+                self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))            
+            
         # If boosting harmonics, suppress the tone fundamental frequency.
         if const.HARMONIC_BOOST_ENABLED:
             harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 

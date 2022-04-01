@@ -114,9 +114,19 @@ class Voice_Editor:
         self.vibrato_depth_slider = guizero.Slider(self.tone_settings_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
                                      width=200, command=self._handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
-
-        self.ring_mod_label = guizero.Text(self.tone_settings_panel, grid=[0,5], text="Ring modulation rate, %: ")
-        self.ring_mod_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,5], start=0, end=const.MAX_RING_MOD_RATE,
+        
+        self.unison_voices_label = guizero.Text(self.tone_settings_panel, grid=[0,5], text="Unison voices: ")
+        self.unison_voices_slider = guizero.Slider(self.tone_settings_panel, grid=[1,5], start=1, end=const.MAX_UNISON_VOICES,
+                                     width=200, command=self._handle_set_unison_voices)
+        self.unison_voices_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_voices
+        
+        self.unison_detune_label = guizero.Text(self.tone_settings_panel, grid=[0,6], text="Unison detune, %: ")
+        self.unison_detune_slider = guizero.Slider(self.tone_settings_panel, grid=[1,6], start=0, end=const.MAX_UNISON_DETUNE,
+                                     width=200, command=self._handle_set_unison_detune)
+        self.unison_detune_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_detune
+        
+        self.ring_mod_label = guizero.Text(self.tone_settings_panel, grid=[0,7], text="Ring modulation rate, %: ")
+        self.ring_mod_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,7], start=0, end=const.MAX_RING_MOD_RATE,
                                      width=200, command=self._handle_set_ring_mod_rate)
         self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
         
@@ -442,6 +452,14 @@ class Voice_Editor:
     def _handle_set_vibrato_depth(self, value):
         self._debug_2("In _handle_set_vibrato_depth()")
         self.view.controller.on_request_vibrato_depth(int(value))
+        
+    def _handle_set_unison_voices(self, value):
+        self._debug_2("In _handle_set_unison_voices()")
+        self.view.controller.on_request_unison_voices(int(value))
+        
+    def _handle_set_unison_detune(self, value):
+        self._debug_2("In _handle_set_unison_detune()")
+        self.view.controller.on_request_unison_detune(int(value))
         
     def _handle_set_ring_mod_rate(self, value):
         self._debug_2("In _handle_set_ring_mod_rate()")

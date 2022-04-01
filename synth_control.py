@@ -30,6 +30,8 @@ class Voice_Parameters:
         self.harmonic_boost = 0
         self.vibrato_rate = 0
         self.vibrato_depth = 0
+        self.unison_voices = 1
+        self.unison_detune = 0
         self.tremolo_rate = 0
         self.tremolo_depth = 0
         self.ring_mod_rate = 0
@@ -198,6 +200,18 @@ class Controller:
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    def on_request_unison_voices(self, value):
+        self._debug_2("In on_request_unison_voices: " + str(value))
+        self.voices[self.voice_index].unison_voices = int(value)
+        self.model.scratch_voice(self.voice_index)
+        self._play_current_note()
+        
+    def on_request_unison_detune(self, value):
+        self._debug_2("In on_request_unison_detune: " + str(value))
+        self.voices[self.voice_index].unison_detune = int(value)
+        self.model.scratch_voice(self.voice_index)
+        self._play_current_note()
+        
     def on_request_ring_mod_rate(self, value):
         self._debug_2("In on_request_ring_mod_rate: " + str(value))
         self.voices[self.voice_index].ring_mod_rate = int(value)
@@ -317,6 +331,10 @@ class Controller:
             values.append(int(self.voices[vi].vibrato_rate))
             names.append(name_prefix + "vibrato_depth")
             values.append(int(self.voices[vi].vibrato_depth))
+            names.append(name_prefix + "unison_voices")
+            values.append(int(self.voices[vi].unison_voices))
+            names.append(name_prefix + "unison_detune")
+            values.append(int(self.voices[vi].unison_detune))
             names.append(name_prefix + "ring_mod_rate")
             values.append(int(self.voices[vi].ring_mod_rate))
             names.append(name_prefix + "tremolo_rate")
@@ -363,6 +381,10 @@ class Controller:
                         self.voices[vi].vibrato_rate = int(values[i])
                     elif names[i] == name_prefix + "vibrato_depth":
                         self.voices[vi].vibrato_depth = int(values[i])
+                    elif names[i] == name_prefix + "unison_voices":
+                        self.voices[vi].unison_voices = int(values[i])
+                    elif names[i] == name_prefix + "unison_detune":
+                        self.voices[vi].unison_detune = int(values[i])
                     elif names[i] == name_prefix + "ring_mod_rate":
                         self.voices[vi].ring_mod_rate = int(values[i])
                     elif names[i] == name_prefix + "tremolo_rate":
