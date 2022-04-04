@@ -12,8 +12,8 @@ import synth_constants as const
 # ------------------------------
 # Keyboard constants
 
-white_semitones = [0, 2, 4, 5, 7, 9, 11]
-black_semitones = [1, 3, -1000, 6, 8, 10, -1000]
+white_keys = [0, 2, 4, 5, 7, 9, 11]
+black_keys = [1, 3, -1000, 6, 8, 10, -1000]
 KEY_X_SPACING = 40
 WK_X0 = 25
 WK_Y0 = 25
@@ -28,6 +28,15 @@ KEYBOARD_HEIGHT = WK_HEIGHT + (2 *  WK_Y0)
 NUM_WHITE_KEYS = (const.NUM_OCTAVES * 7) + 1
 NUM_BLACK_KEYS = (const.NUM_OCTAVES * 7) - 1
 NUM_KEYS = (12 * const.NUM_OCTAVES) + 1
+
+# Widget sizes
+
+SCOPE_HEIGHT = 280
+SCOPE_WIDTH = 500
+VOICE_EDITOR_WIDTH = KEYBOARD_WIDTH + 50
+NUM_TONE_SLIDERS = 3 + (2 * const.UNISON_ENABLED) + const.HARMONIC_BOOST_ENABLED + const.RING_MODULATION_ENABLED
+NUM_ENVELOPE_SLIDERS = 5 + (2 * const.TREMOLO_ENABLED)
+VOICE_EDITOR_HEIGHT = 200 + max(50 + (NUM_TONE_SLIDERS * 40), SCOPE_HEIGHT) + max(NUM_ENVELOPE_SLIDERS * 40, SCOPE_HEIGHT)
 
 debug_level = 2
 
@@ -48,7 +57,7 @@ class Voice_Editor:
         
         
     def voice_editor_window(self):
-        self.window = guizero.Window(self.view.app, "Voice editor", width = 940, height = 710)
+        self.window = guizero.Window(self.view.app, "Voice editor", width = VOICE_EDITOR_WIDTH, height = VOICE_EDITOR_HEIGHT)
         self.window.when_closed = self._closed_voice_editor
         self.voice_window_open = True
         
@@ -60,8 +69,8 @@ class Voice_Editor:
         self.envelope_settings_panel = guizero.Box(self.panel_0, layout="grid", grid=[0,1])
         self._envelope_settings_controls()
         
-        self.audio_scope = guizero.Drawing(self.panel_0, grid=[1,0], width=500, height=220)
-        self.control_scope = guizero.Drawing(self.panel_0, grid=[1,1], width=500, height=220)
+        self.audio_scope = guizero.Drawing(self.panel_0, grid=[1,0], width=SCOPE_WIDTH, height=SCOPE_HEIGHT)
+        self.control_scope = guizero.Drawing(self.panel_0, grid=[1,1], width=SCOPE_WIDTH, height=SCOPE_HEIGHT)
         
         self.panel_1 = guizero.Box(self.window, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.view.app.bg)
@@ -85,48 +94,50 @@ class Voice_Editor:
         
     def _tone_settings_controls(self):
         self._debug_2("In _tone_settings_controls()")
-        self.new_voice_button = guizero.PushButton(self.tone_settings_panel, grid=[0,0], text="New Voice", command=self._handle_new_voice)
+        self.voice_controls_panel = guizero.Box(self.tone_settings_panel, layout="grid", grid=[0,0])
+        self.new_voice_button = guizero.PushButton(self.voice_controls_panel, grid=[0,0], text="New Voice", command=self._handle_new_voice)
         voice_name_list = []
         for i in range(self.view.controller.num_voices):
             voice_name = "Voice " + str(i+1)
             voice_name_list.append(voice_name)
-        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=voice_name_list,
-                                     height="fill", command=self._handle_set_voice)
-                
-        self.waveform_combo = guizero.Combo(self.tone_settings_panel, grid=[2,0], options=["Sine","Triangle","Sawtooth","Square"],
+        self.voice_combo = guizero.Combo(self.voice_controls_panel, grid=[1,0], options=voice_name_list,
+                                     height="fill", command=self._handle_set_voice)                
+        self.waveform_combo = guizero.Combo(self.voice_controls_panel, grid=[2,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self._handle_set_waveform)
-        self.width_label = guizero.Text(self.tone_settings_panel, grid=[0,1], text="Width, % ")
-        self.width_slider = guizero.Slider(self.tone_settings_panel, grid=[1,1], start=10, end=100,
+        
+        self.voice_sliders_panel = guizero.Box(self.tone_settings_panel, layout="grid", grid=[0,1])
+        self.width_label = guizero.Text(self.voice_sliders_panel, grid=[0,1], text="Width, % ")
+        self.width_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,1], start=10, end=100,
                             width=200, command=self._handle_set_width)
         self.width_slider.value = 100
 
-        self.harmonic_boost_label = guizero.Text(self.tone_settings_panel, grid=[0,2], text="Harmonic boost, %: ")
-        self.harmonic_boost_slider = guizero.Slider(self.tone_settings_panel, grid=[1,2], start=0, end=const.MAX_HARMONIC_BOOST,
+        self.harmonic_boost_label = guizero.Text(self.voice_sliders_panel, grid=[0,2], text="Harmonic boost, %: ")
+        self.harmonic_boost_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,2], start=0, end=const.MAX_HARMONIC_BOOST,
                                      width=200, command=self._handle_set_harmonic_boost)
         self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
         
-        self.vibrato_rate_label = guizero.Text(self.tone_settings_panel, grid=[0,3], text="Vibrato rate, %: ")
-        self.vibrato_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
+        self.vibrato_rate_label = guizero.Text(self.voice_sliders_panel, grid=[0,3], text="Vibrato rate, %: ")
+        self.vibrato_rate_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
                                      width=200, command=self._handle_set_vibrato_rate)
         self.vibrato_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
         
-        self.vibrato_depth_label = guizero.Text(self.tone_settings_panel, grid=[0,4], text="Vibrato depth, %: ")
-        self.vibrato_depth_slider = guizero.Slider(self.tone_settings_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
+        self.vibrato_depth_label = guizero.Text(self.voice_sliders_panel, grid=[0,4], text="Vibrato depth, %: ")
+        self.vibrato_depth_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
                                      width=200, command=self._handle_set_vibrato_depth)
         self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
         
-        self.unison_voices_label = guizero.Text(self.tone_settings_panel, grid=[0,5], text="Unison voices: ")
-        self.unison_voices_slider = guizero.Slider(self.tone_settings_panel, grid=[1,5], start=1, end=const.MAX_UNISON_VOICES,
+        self.unison_voices_label = guizero.Text(self.voice_sliders_panel, grid=[0,5], text="Unison voices: ")
+        self.unison_voices_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,5], start=1, end=const.MAX_UNISON_VOICES,
                                      width=200, command=self._handle_set_unison_voices)
         self.unison_voices_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_voices
         
-        self.unison_detune_label = guizero.Text(self.tone_settings_panel, grid=[0,6], text="Unison detune, %: ")
-        self.unison_detune_slider = guizero.Slider(self.tone_settings_panel, grid=[1,6], start=0, end=const.MAX_UNISON_DETUNE,
+        self.unison_detune_label = guizero.Text(self.voice_sliders_panel, grid=[0,6], text="Unison detune, %: ")
+        self.unison_detune_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,6], start=0, end=const.MAX_UNISON_DETUNE,
                                      width=200, command=self._handle_set_unison_detune)
         self.unison_detune_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_detune
         
-        self.ring_mod_label = guizero.Text(self.tone_settings_panel, grid=[0,7], text="Ring modulation rate, %: ")
-        self.ring_mod_rate_slider = guizero.Slider(self.tone_settings_panel, grid=[1,7], start=0, end=const.MAX_RING_MOD_RATE,
+        self.ring_mod_label = guizero.Text(self.voice_sliders_panel, grid=[0,7], text="Ring modulation rate, %: ")
+        self.ring_mod_rate_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,7], start=0, end=const.MAX_RING_MOD_RATE,
                                      width=200, command=self._handle_set_ring_mod_rate)
         self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
         
@@ -140,7 +151,13 @@ class Voice_Editor:
             self.vibrato_depth_slider.hide()
         if not const.RING_MODULATION_ENABLED:
             self.ring_mod_label.hide()
-            self.ring_mod_rate_slider.hide()            
+            self.ring_mod_rate_slider.hide()
+        if not const.UNISON_ENABLED:
+            self.unison_voices_label.hide()
+            self.unison_voices_slider.hide()
+            self.unison_detune_label.hide()
+            self.unison_detune_slider.hide()
+            
 
     def _envelope_settings_controls(self):
         self._debug_2("In _envelope_settings_controls()")
@@ -209,7 +226,7 @@ class Voice_Editor:
             voice_name = "Voice " + str(i+1)
             voice_name_list.append(voice_name)
         self.voice_combo.destroy()
-        self.voice_combo = guizero.Combo(self.tone_settings_panel, grid=[1,0], options=voice_name_list,
+        self.voice_combo = guizero.Combo(self.voice_controls_panel, grid=[1,0], options=voice_name_list,
                                      height="fill", command=self._handle_set_voice)
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.voice_combo, voice_name)
@@ -230,9 +247,20 @@ class Voice_Editor:
             self.width_label.show()
             self.width_slider.show()
             self.width_slider.value = self.view.controller.voices[self.view.controller.voice_index].width
+            if const.UNISON_ENABLED:
+                self.unison_voices_label.show()
+                self.unison_voices_slider.show()
+                self.unison_voices_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_voices
+                self.unison_detune_label.show()
+                self.unison_detune_slider.show()
+                self.unison_detune_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_detune
         else:
             self.width_label.hide()
             self.width_slider.hide()
+            self.unison_voices_label.hide()
+            self.unison_voices_slider.hide()
+            self.unison_detune_label.hide()
+            self.unison_detune_slider.hide()
         if not waveform == "Sine" and const.HARMONIC_BOOST_ENABLED:
             self.harmonic_boost_label.show()
             self.harmonic_boost_slider.show()
@@ -363,39 +391,39 @@ class Voice_Editor:
     
     def _identify_key_number(self, x, y):
         self._debug_2("In _identify_key_number()")
-        semitone = -1 # default value for "not a key"
+        key = -1 # default value for "not a key"
         
         if y > BK_Y0 and y < BK_Y0 + BK_HEIGHT:
             
             if x > BK_X0 and (x - BK_X0) % KEY_X_SPACING < BK_WIDTH:
                 octave = int((x - WK_X0) / (7 * KEY_X_SPACING))
                 octave_origin = (7 * octave * KEY_X_SPACING) + BK_X0
-                semitone = black_semitones[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
-                if semitone >= 0:
-                    self._debug_2("Black key pressed with number = " + str(semitone))
+                key = black_keys[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                if key >= 0:
+                    self._debug_2("Black key pressed with number = " + str(key))
                       
         elif y > BK_Y0 + BK_HEIGHT and y < BK_Y0 + WK_HEIGHT:
             
             if x > WK_X0 and (x - WK_X0) % KEY_X_SPACING < WK_WIDTH:
                 octave = int((x - WK_X0) / (7 * KEY_X_SPACING))
                 octave_origin = (7 * octave * KEY_X_SPACING) + WK_X0
-                semitone = white_semitones[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
-                if semitone >= 0:
-                    self._debug_2("White key pressed with number = " + str(semitone))
+                key = white_keys[int((x - octave_origin) / KEY_X_SPACING)] + (12 * octave)
+                if key >= 0:
+                    self._debug_2("White key pressed with number = " + str(key))
         # Do extra safety-check (shouldn't really be necessary!)
-        if semitone >= NUM_KEYS:
-            semitone = -1
-        return semitone
+        if key >= NUM_KEYS:
+            key = -1
+        return key
         
     #-------------------- Event Handlers --------------------
        
     def _handle_new_voice(self):
-        self._debug_2("In _handle_new_voice()")
+        self._debug_2("In _handle_new_voice: " + str(value))
         # Request new voice
         self.view.controller.on_request_new_voice()        
         
     def _handle_set_voice(self, value):
-        self._debug_2("In _handle_set_voice()")
+        self._debug_2("In _handle_set_voice: " + str(value))
         # pass on the number part of the string value
         self.view.controller.on_request_voice(int(value[6:]) - 1)
     
@@ -480,21 +508,21 @@ class Voice_Editor:
         if event.x < 0 or event.x >= self.keyboard.width or event.y < 0 or event.y >= self.keyboard.height:
             self._debug_2("WARNING: Mouse out of keyboard drawing.")
             return
-        semitone = self._identify_key_number(event.x, event.y)
-        if semitone >= 0:
-            if semitone != self.previous_key:
-                self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
-                self.view.controller.on_request_note(semitone)
+        key = self._identify_key_number(event.x, event.y)
+        if key >= 0:
+            if key != self.previous_key:
+                self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
+                self.view.controller.on_request_note(key)
         else:
             self._debug_2("Not a key")
-        self.previous_key = semitone
+        self.previous_key = key
         
     def _handle_key_pressed(self, event):
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
-        semitone = self._identify_key_number(event.x, event.y)
-        if semitone >= 0:
-            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)          
-            self.view.controller.on_request_note(semitone)
+        key = self._identify_key_number(event.x, event.y)
+        if key >= 0:
+            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)          
+            self.view.controller.on_request_note(key)
         else:
             self._debug_2("Not a key")        
 
