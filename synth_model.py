@@ -301,18 +301,18 @@ class Model:
         unison_detune = self.controller.voices[voice_index].unison_detune
         gain_adjustment = 1.0 / unison_voices
         if const.UNISON_ENABLED and waveform in ["Sawtooth", "Square"] and unison_voices > 1 and unison_detune > 0:
-            frequency = int((centre_frequency * (100 - unison_detune) / 100) + 0.5)
-            frequency_step = int((centre_frequency * 2 * unison_detune / (100 * (unison_voices - 1))) + 0.5)
+            frequency_step = int((centre_frequency * unison_detune * const.UNISON_SCALE_FACTOR / (100 * (unison_voices - 1))) + 0.5)
+            start_frequency = int((centre_frequency - (0.5 * frequency_step * unison_voices)) + 0.5)
             # Make an array of zeros for the separate voices to be added into.
             tone = np.zeros(((int(const.SAMPLE_RATE * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
-            for i in range(unison_voices): 
+            for i in range(unison_voices):
+                frequency = int(start_frequency + (i * frequency_step))
                 if waveform == "Sawtooth":
                     unison_tone = self._pwm_sawtooth_wave(frequency, width)
                 elif waveform == "Square":
                     unison_tone = self._pwm_square_wave(frequency, width)
                 else:
                     self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
-                frequency += frequency_step
                 tone += gain_adjustment * unison_tone
         else:
             frequency = centre_frequency
