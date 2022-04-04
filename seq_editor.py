@@ -140,18 +140,18 @@ class Seq_Editor:
     
     def _handle_toggle_seq_note(self, x, y):
         self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
-        semitone = (12 * const.NUM_OCTAVES) - y
-        if semitone >= 0:
-            self.view.controller.on_request_note(semitone)
+        key = (12 * const.NUM_OCTAVES) - y
+        if key >= 0:
+            self.view.controller.on_request_note(key)
             if x > 2:
                 timeslot = x - 3
                 vi = self.view.controller.voice_index
-                if self.view.controller.sequence.notes[vi, timeslot, semitone] > 0:
+                if self.view.controller.sequence.notes[vi, timeslot, key] > 0:
                     colour = "white"
                 else:
                     colour = self.view.controller.voices[vi].colour
-                self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - semitone, colour)
-                self.view.controller.on_request_toggle_sequence_note(timeslot, vi, semitone)
+                self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
+                self.view.controller.on_request_toggle_sequence_note(timeslot, vi, key)
         else:
             self._debug_2("Not a key")
     
