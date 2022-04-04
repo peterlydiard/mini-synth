@@ -27,8 +27,9 @@ def play_sound(wave):
     _debug_2("In play_sound()")
     global last_output_time, sound
     
+    # Reduce demand on audio output by fading out previous note.
     if not sound is None:
-        sound.fadeout(100)
+        # sound.fadeout(100)
         sound = None
     # Ensure that highest value is in 16-bit range
     max_level = np.max(np.abs(wave))
