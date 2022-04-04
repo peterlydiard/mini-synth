@@ -33,7 +33,7 @@ If you edit the online version of this file, it may conflict with other changes 
 
 11. White and pink noise generators, random pitch and amplitude modulation.
 
-12. Tone generator additions: ring modulator (done), unison, sub-oscillator, quantisation, automatic chords, chorus?
+12. Tone generator additions: ring modulator (done), unison (done), sub-oscillator, quantisation, automatic chords, chorus?
 
 13. Stereo panning, phasing, reverb, resonnance filter module, note length control in sequencer?
 
@@ -46,12 +46,10 @@ If you edit the online version of this file, it may conflict with other changes 
 Changing the voice causes a note to be played several times in response to each parameter that changes. Guizero seems
 to respond to the program writing new slider values in the same way as when the user manually moves the slider.
 
-The Model class has copies of some parameters that are in the Controller class. This may be unecessary.
+The Model class has a copy of the sample_rate parameter that is in the Controller class. This may be unecessary.
 
 The view and model objects read parameters directly from the controller object. This would make thorough testing
 of those modules more difficult as they rely on 'hidden' inputs.
-
-Variables called key and semitone often refer to the same data. This is confusing.
 
 The sustain_level parameter is input as a percentage but used as a factor with maximum value 1.0. This can be
 confusing.
@@ -62,8 +60,10 @@ requires a timout event which seems to need multiprocessing in the Python progra
 
 Tremolo rate is fixed for all waveforms, but vibrato is proportional to the tone fundamental frequency.
 
+At one stage, it seemed necessary to reduce the load on the audio output by fading out previous tones in the play_sound fn.
+
 The tone-tracking notch filter used to produce harmonic boost involves a lot more calculation than the previous production
-of a cancellation tone through the sine function. This copes better with vibrato and any future unison function, however.
+of a cancellation tone through the sine function. This copes better with vibrato and the unison functions, however.
 
 The range of the vibrato controls have been arbitrarily set and may not be optimal. Magic numbers could be turned
 into undisplayed settings.
@@ -72,14 +72,14 @@ All tones are generated 1000 ms long, regardless of the length of any notes usin
 efficiently.
 
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
-in stereo. Also, should the detuning be an absolute frequency or proportional to the tone? 1 Hz steps would be convenient.
+in stereo. Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience.
 
 Using 1000 ms tone samples and 1 Hz frequency resolution means that the waveform passes through zero at the start and end. This
 could enable the production of notes longer than 1000 ms. Vibrato and unison should not be a problem, if the tones used are
 also multiples of 1 Hz.
 
-The tempo parameter is labelled with beats per minute and treated as bars per minute. There is also a separate beats per bar
-parameter, being used as the number of notes per bar in the sequencer. All very confusing!
+The tempo parameter is labelled with bpm and treated as bars per minute. There is also a separate beats per bar
+parameter, being used as the number of notes per bar in the sequencer. A bit confusing!
 
 If quantisation is used, should this be before or after envelope shaping and mixing? If before, this would give a more consistent
 effect.
@@ -88,8 +88,6 @@ effect.
 
 When passing around notes in a sequence, it may be appropriate to group them by timeslot, so that only the information
 that is needed for audio production, or for display is being moved around.
-
-The sequence editor could select which voices are to be shown, to allow for multiple voices on the same timeslot and note.
 
 MIDI note numbers from 0 to 127 are a standard for keyboard instruments. 55 Hz is MIDI key 33 and number increases
 by 12 every octave.
@@ -127,9 +125,9 @@ sounddevice module.
 If different instruments have different ranges, where should the mapping from key numbers to tone frequencies be done?
 Use MIDI key numbers?
 
-For a sequencer, how should note length be adjusted according to changes in tempo.
+For a sequencer, should note length be adjusted according to changes in tempo?
 
-Portamento-type pitch slides seem incompatible with a wavetable design.
+Portamento-type pitch slides seem incompatible with a wavetable-based design as used here.
 
 Perhaps envelope control of VCO pitch could be achieved for attack and sustain but not for release, which will move
 around with note length. The pitch offset during sustain may be best set to zero anyway. Inversion of ADSR is said to make
@@ -147,7 +145,7 @@ Some instruments, e.g. oboe have lower levels of the fundamental than the higher
 
 Roland RE201 Space Echo.
 
-In the Serum software synth, one "oscillator" can contain sine, triangle, sawtooth and squre waves in any ratio.
+In the Serum software synth, one "oscillator" can contain sine, triangle, sawtooth and square waves in any ratio.
 
 Percussion-type voices do not necessarily need to be controlled by a keyboard.
 
