@@ -7,7 +7,7 @@ import synth_constants as const
 ######################### Global variables #########################
 
 # Debug levels: 0 = none, 1 = basic, 2 = long-winded.
-debug_level = 2
+debug_level = 1
 
 ####################################################################
 
@@ -176,7 +176,7 @@ class Model:
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
         times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
         ring_mod_radians_per_sec = 2 * np.pi * frequency * ring_mod_rate / 100
-        ring_mod_tone = np.sin(ring_mod_radians_per_sec * times_sec)
+        ring_mod_tone = np.cos(ring_mod_radians_per_sec * times_sec)
         output = np.multiply(tone, ring_mod_tone)
         return output
     
@@ -275,47 +275,45 @@ class Model:
         if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in scratch_voice() = " + str(voice_index))
             return
-        for semitone in range(const.NUM_KEYS):
-            self.voices[voice_index, semitone, 0] = -5 # Set first sample to an invalid value
+        for key in range(const.NUM_KEYS):
+            self.voices[voice_index, key, 0] = -5 # Set first sample to an invalid value
         
     def make_voice(self, voice_index):
         self._debug_1("In make_voice() - making voice:  " + str(voice_index))
         if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_voice() = " + str(voice_index))
             return
-        for semitone in range(const.NUM_KEYS):
-            self.make_tone(voice_index, semitone)         
+        for key in range(const.NUM_KEYS):
+            self.make_tone(voice_index, key)         
             
-    def make_tone(self, voice_index, semitone):
+    def make_tone(self, voice_index, key):
         self._debug_2("In make_tone() ")
         if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in make_tone() = " + str(voice_index))
             return
-        if semitone >= const.NUM_KEYS:
-            self._debug_1("ERROR: invalid semitone in make_tone() = " + str(semitone))
+        if key >= const.NUM_KEYS:
+            self._debug_1("ERROR: invalid key in make_tone() = " + str(key))
             return
         waveform = self.controller.voices[voice_index].waveform
         width = self.controller.voices[voice_index].width
-        centre_frequency = int((const.LOWEST_TONE * np.power(2, semitone/12)) + 0.5)
+        centre_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
         unison_voices = self.controller.voices[voice_index].unison_voices
         unison_detune = self.controller.voices[voice_index].unison_detune
-        if unison_voices > 1 and unison_detune > 0:
+        gain_adjustment = 1.0 / unison_voices
+        if const.UNISON_ENABLED and waveform in ["Sawtooth", "Square"] and unison_voices > 1 and unison_detune > 0:
             frequency = int((centre_frequency * (100 - unison_detune) / 100) + 0.5)
             frequency_step = int((centre_frequency * 2 * unison_detune / (100 * (unison_voices - 1))) + 0.5)
+            # Make an array of zeros for the separate voices to be added into.
             tone = np.zeros(((int(const.SAMPLE_RATE * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
             for i in range(unison_voices): 
-                if waveform == "Sine":
-                    unison_tone = self._sine_wave(frequency)
-                elif waveform == "Triangle":
-                    unison_tone = self._triangle_wave(frequency)
-                elif waveform == "Sawtooth":
+                if waveform == "Sawtooth":
                     unison_tone = self._pwm_sawtooth_wave(frequency, width)
                 elif waveform == "Square":
                     unison_tone = self._pwm_square_wave(frequency, width)
                 else:
                     self._debug_1("ERROR: invalid waveform in make_tone() = " + str(waveform))
                 frequency += frequency_step
-                tone += unison_tone
+                tone += gain_adjustment * unison_tone
         else:
             frequency = centre_frequency
             if waveform == "Sine":
@@ -342,21 +340,21 @@ class Model:
                 tone = self.apply_ring_modulation(tone, frequency, ring_mod_rate)
             
         # Save tone in voices array    
-        self.voices[voice_index, semitone] = tone
+        self.voices[voice_index, key] = tone
             
-    def fetch_tone(self, voice_index, semitone):
+    def fetch_tone(self, voice_index, key):
         self._debug_2("In fetch_tone()")
         if voice_index >= const.MAX_VOICES:
             self._debug_1("ERROR: invalid voice number in fetch_tone() = " + str(voice_index))
             return None
-        if semitone >= const.NUM_KEYS:
-            self._debug_1("ERROR: invalid semitone number in fetch_tone() = " + str(semitone))
+        if key >= const.NUM_KEYS:
+            self._debug_1("ERROR: invalid key number in fetch_tone() = " + str(key))
             return None
-        tone = self.voices[voice_index, semitone]
+        tone = self.voices[voice_index, key]
         # Check if tone needs to be regenerated
         if tone[0] < -2:
-            self.make_tone(voice_index, semitone)
-            tone = self.voices[voice_index, semitone]
+            self.make_tone(voice_index, key)
+            tone = self.voices[voice_index, key]
         return tone        
                 
     def _debug_1(self, message):
