@@ -39,7 +39,7 @@ class View:
         
         synth_audio.initialise_audio()
 
-        self.app = guizero.App("Mini-synth", width = 940, height = 710)
+        self.app = guizero.App("Mini-synth", width = 940, height = 350)
         
         self.top_menu = guizero.Box(self.app, layout = "grid")
         
@@ -109,11 +109,14 @@ class View:
     # Put the selected option at the top of the Combo list.    
     def update_combo(self, combo, option):
         self._debug_2("In update_combo()")
-        if not combo.remove(option):
-            self._debug_1("WARNING: Tried to remove unknown option = " + str(option))
-        else:
-            combo.insert(0, option)
-            combo.select_default()
+        try:
+            if not combo.remove(option):
+                self._debug_1("WARNING: Tried to remove unknown option = " + str(option))
+            else:
+                combo.insert(0, option)
+                combo.select_default()
+        except:
+            self._debug_1("ERROR: update_combo() failed with input = " + str(option))
    
     def _handle_close_app(self):
         self._debug_2("In _handle_close_app()")
@@ -162,9 +165,13 @@ if __name__ == "__main__":
             self.release = DEFAULT_RELEASE
             self.vibrato_rate = 0
             self.vibrato_depth = 0
+            self.ring_mod_rate = 0
+            self.ring_mod_depth = 0
             self.tremolo_rate = 0
             self.tremolo_depth = 0
             self.harmonic_boost = 0
+            self.unison_voices = 1
+            self.unison_detune = 0
             
     class Sequence:
         def __init__(self):
@@ -248,9 +255,9 @@ if __name__ == "__main__":
         def on_request_test(self):
             self._debug_2("Play test requested.")
         
-        def on_request_toggle_sequence_note(self, timeslot, vi, semitone):
-            self._debug_2("Sequence note requested: timeslot, voice, semitone = "
-                          + str(timeslot) + ", " + str(vi) + ", " + str(semitone))
+        def on_request_toggle_sequence_note(self, timeslot, vi, key):
+            self._debug_2("Sequence note requested: timeslot, voice, key = "
+                          + str(timeslot) + ", " + str(vi) + ", " + str(key))
             
         def on_request_beats(self, value):
             self._debug_2("Set beats/bar to " + str(value))
