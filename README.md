@@ -46,6 +46,10 @@ If you edit the online version of this file, it may conflict with other changes 
 Changing the voice causes a note to be played several times in response to each parameter that changes. Guizero seems
 to respond to the program writing new slider values in the same way as when the user manually moves the slider.
 
+It is possible to open more than one voice editor window, but only one will reflect the correct state of the program.
+
+If the program crashes while running a library module (e.g. guizero) then it can be difficult to find the cause.
+
 The Model class has a copy of the sample_rate parameter that is in the Controller class. This may be unecessary.
 
 The view and model objects read parameters directly from the controller object. This would make thorough testing
