@@ -52,11 +52,11 @@ class Voice_Editor:
 
     def main(self):
         self._debug_1("In main()")
-        self.voice_editor_window()
+        self._voice_editor_window()
         self.show_new_settings()
         
         
-    def voice_editor_window(self):
+    def _voice_editor_window(self):
         self.window = guizero.Window(self.view.app, "Voice editor", width = VOICE_EDITOR_WIDTH, height = VOICE_EDITOR_HEIGHT)
         self.window.when_closed = self._closed_voice_editor
         self.voice_window_open = True

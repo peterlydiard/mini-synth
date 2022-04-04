@@ -124,12 +124,12 @@ class Model:
         return tone
     
     # Suppress the fundamental frequency and amplify the result to boost the harmonics.
-    def suppress_fundamental(self, tone, frequency):
+    def _suppress_fundamental(self, tone, frequency):
         harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
         # Make a frequency control waveform
         freq_control = frequency * np.ones(len(tone), dtype=float)
         filter_q_factor = 2 # Magic number
-        filtered_tone = self.bandpass_filter(tone, freq_control, filter_q_factor)
+        filtered_tone = self._bandpass_filter(tone, freq_control, filter_q_factor)
         # Compensate for settling time of filter, by merging more stable cycles with the early samples.
         two_cycles = int(2 * self.sample_rate / frequency)
         one_over_two_cycles = 1 / two_cycles # do division outside loop, to cut processor load.
@@ -144,7 +144,7 @@ class Model:
     # Bandpass Filter.
     # tone = input waveform to be filtered, freq_control = control signal to set filter centre frequency. 
     # q_factor = ratio of filter centre frequency divided by 3dB bandwidth (approximately).
-    def bandpass_filter(self, tone, freq_control, q_factor):
+    def _bandpass_filter(self, tone, freq_control, q_factor):
         
         # Bandpass and bandstop (notch) biquadratic filters.
         band_pass = np.zeros(len(tone))
@@ -171,8 +171,8 @@ class Model:
 
 
     # Multiply input tone by ring modulator tone if selected
-    def apply_ring_modulation(self, tone, frequency, ring_mod_rate):
-        self._debug_2("In apply_ring_modulation() ")
+    def _apply_ring_modulation(self, tone, frequency, ring_mod_rate):
+        self._debug_2("In _apply_ring_modulation() ")
         # Generate array with duration*sample_rate steps, ranging between 0 and duration
         times_sec = np.linspace(0, self.max_duration / 1000, int(self.sample_rate * self.max_duration / 1000), False)
         ring_mod_radians_per_sec = 2 * np.pi * frequency * ring_mod_rate / 100
@@ -331,13 +331,13 @@ class Model:
         if const.HARMONIC_BOOST_ENABLED:
             harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
             if waveform != "Sine" and harmonic_boost > 0:
-                tone = self.suppress_fundamental(tone, frequency)
+                tone = self._suppress_fundamental(tone, frequency)
 
         # Multiply tone by a sine wave proportional to the base tone frequency
         if const.RING_MODULATION_ENABLED:
             ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
             if ring_mod_rate > 0:
-                tone = self.apply_ring_modulation(tone, frequency, ring_mod_rate)
+                tone = self._apply_ring_modulation(tone, frequency, ring_mod_rate)
             
         # Save tone in voices array    
         self.voices[voice_index, key] = tone

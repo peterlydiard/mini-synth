@@ -22,11 +22,11 @@ class Seq_Editor:
 
     def main(self):
         self._debug_1("In main()")
-        self.sequence_editor_window()
+        self._sequence_editor_window()
         self.show_sequence()
         
         
-    def sequence_editor_window(self):
+    def _sequence_editor_window(self):
         self.window = guizero.Window(self.view.app, "Sequence editor", width = 1200, height = 750)
         self.sequence_window_open = True
         self.window.when_closed = self._closed_sequence_editor
@@ -36,7 +36,7 @@ class Seq_Editor:
         self.board = guizero.Waffle(self.seq_box, grid=[0,0], align="bottom", width=const.MAX_TIMESLOTS+3, height=const.NUM_KEYS,
                                     pad=0, dim=18, command=self._handle_toggle_seq_note)
 
-        self.draw_seq_keyboard(const.NUM_OCTAVES)
+        self._draw_seq_keyboard(const.NUM_OCTAVES)
         
         self.seq_controls = guizero.Box(self.seq_box, grid=[0,1], layout="grid")
         voice_name_list = []
@@ -61,8 +61,8 @@ class Seq_Editor:
             self.seq_voice_checks[i].value = 1
             
        
-    def draw_seq_keyboard(self, num_octaves=const.NUM_OCTAVES):
-        self._debug_2("In draw_seq_keyboard()")
+    def _draw_seq_keyboard(self, num_octaves=const.NUM_OCTAVES):
+        self._debug_2("In _draw_seq_keyboard()")
               
         for i in range(12 * const.NUM_OCTAVES + 1):
             if (i % 12) in [1,3,6,8,10]:
@@ -70,22 +70,22 @@ class Seq_Editor:
                 self.board.set_pixel(1, 12 * const.NUM_OCTAVES - i, "black")
                 self.board.set_pixel(2, 12 * const.NUM_OCTAVES - i, "black")
                 
-    def draw_seq_octaves(self):
-        self._debug_2("In draw_seq_octaves()")
+    def _draw_seq_octaves(self):
+        self._debug_2("In _draw_seq_octaves()")
         for i in range(const.NUM_OCTAVES + 1):
             key = 12 * i
             for timeslot in range(self.view.controller.num_timeslots + 3):
                 self.board.set_pixel(timeslot, const.NUM_KEYS - 1 - key, (230,230,230))
         
-    def draw_seq_bars(self):
-        self._debug_2("In draw_seq_bars()")
+    def _draw_seq_bars(self):
+        self._debug_2("In _draw_seq_bars()")
         for timeslot in range(self.view.controller.num_timeslots):
             if (timeslot % self.view.controller.sequence.beats_per_bar == 0):
                 for key in range(12 * const.NUM_OCTAVES + 1):
                     self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, (230,230,230))
 
-    def draw_seq_notes(self):
-        self._debug_2("In draw_seq_notes()")
+    def _draw_seq_notes(self):
+        self._debug_2("In _draw_seq_notes()")
         for vi in range(self.view.controller.num_voices):
             if self.seq_voice_checks[vi].value == 1:
                 for timeslot in range(self.view.controller.num_timeslots):
@@ -96,14 +96,16 @@ class Seq_Editor:
 
     def show_sequence(self):
         self._debug_2("In show_sequence()")
-        voice_name = "Voice " + str(self.view.controller.voice_index + 1)
-        self.view.update_combo(self.seq_voice_combo, voice_name)
-        self.seq_voice_text.bg = self.view.controller.voices[self.view.controller.voice_index].colour
-        self.seq_tempo_slider.value = self.view.controller.sequence.tempo
-        beats_name = str(self.view.controller.sequence.beats_per_bar) + " beats/bar"
-        self.view.update_combo(self.seq_beats_combo, beats_name)
-        self._handle_update_board()
-
+        try:
+            voice_name = "Voice " + str(self.view.controller.voice_index + 1)
+            self.view.update_combo(self.seq_voice_combo, voice_name)
+            self.seq_voice_text.bg = self.view.controller.voices[self.view.controller.voice_index].colour
+            self.seq_tempo_slider.value = self.view.controller.sequence.tempo
+            beats_name = str(self.view.controller.sequence.beats_per_bar) + " beats/bar"
+            self.view.update_combo(self.seq_beats_combo, beats_name)
+            self._handle_update_board()
+        except:
+            self._debug_1("Fatal ERROR in show_sequence().")
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
@@ -119,7 +121,7 @@ class Seq_Editor:
         if self.view.voice_window_open == False:
             self.view.controller.on_request_note(15) # Illustrate new voice
         self.seq_voice_checks[vi].value = 1
-        self.draw_seq_notes()
+        self._draw_seq_notes()
 
 
     def _handle_set_seq_beats(self, value):
@@ -158,10 +160,10 @@ class Seq_Editor:
     def _handle_update_board(self):
         self._debug_2("In _handle_update_board: ")
         self.board.set_all("white")
-        self.draw_seq_bars()
-        self.draw_seq_octaves()
-        self.draw_seq_keyboard()
-        self.draw_seq_notes()
+        self._draw_seq_bars()
+        self._draw_seq_octaves()
+        self._draw_seq_keyboard()
+        self._draw_seq_notes()
         
     def _debug_1(self, message):
         global debug_level
