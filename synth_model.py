@@ -235,9 +235,9 @@ class Model:
         self._debug_2("Release level change = " + str(release_level_change))
         self._debug_2("Time step, milliseconds = " + str(times_msec[1]))
                 
-        # Generate a tremolo sine wave
+        # Generate a tremolo cosine wave
         radians_per_msec = 2 * np.pi * voice.tremolo_rate / 1000
-        tremolo = (voice.tremolo_depth / 100) * np.sin(radians_per_msec * times_msec)
+        tremolo = (voice.tremolo_depth / 100) * np.cos(radians_per_msec * times_msec)
         
         level = 0.0
         for i in range(len(times_msec)):
