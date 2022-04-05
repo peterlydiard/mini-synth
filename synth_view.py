@@ -60,31 +60,13 @@ class View:
         self.voice_window_open = True
         
         
-    def on_request_voice_editor_closed(self):
-        self.voice_window_open = False
-        
-        
-    def open_sequence_editor(self):
-        self.seq_editor = seq_editor.Seq_Editor(self)
-        self.seq_editor.main()
-        self.sequence_window_open = True
-        
-        
-    def on_request_seq_editor_closed(self):
-        self.sequence_window_open = False
-
-        
     def show_new_settings(self):
         self._debug_2("In show_new_settings()")
         if self.voice_window_open == True:
             self.voice_editor.show_new_settings()
         if self.sequence_window_open == True:
             self.seq_editor.show_sequence()            
-
-    def show_sequence(self):
-        self._debug_2("In show_sequence()")
-        if self.sequence_window_open == True:
-            self.seq_editor.show_sequence()           
+        
 
     def show_sound(self, wave):
         if self.voice_window_open == True:
@@ -94,8 +76,30 @@ class View:
     def show_envelope(self, envelope):
         if self.voice_window_open == True:
             self.voice_editor.plot_envelope(envelope)
+
+
+    def on_request_voice_editor_closed(self):
+        self.voice_window_open = False
+        self.controller.save_settings()
         
-            
+        
+    def open_sequence_editor(self):
+        self.seq_editor = seq_editor.Seq_Editor(self)
+        self.seq_editor.main()
+        self.sequence_window_open = True                    
+        
+
+    def on_request_seq_editor_closed(self):
+        self.sequence_window_open = False
+        self.controller.save_sequence()
+        
+
+    def show_sequence(self):
+        self._debug_2("In show_sequence()")
+        if self.sequence_window_open == True:
+            self.seq_editor.show_sequence()           
+
+    
     def play_sound(self, wave):
         self._debug_2("In play_sound()")
         synth_audio.play_sound(wave)
@@ -105,6 +109,7 @@ class View:
         self._debug_1("Normal termination")
         synth_audio.stop_audio_output()
         self.app.destroy()
+
 
     # Put the selected option at the top of the Combo list.    
     def update_combo(self, combo, option):
@@ -118,6 +123,7 @@ class View:
         except:
             self._debug_1("ERROR: update_combo() failed with input = " + str(option))
    
+
     def _handle_close_app(self):
         self._debug_2("In _handle_close_app()")
         self.controller.on_request_shutdown()
