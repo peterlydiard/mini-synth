@@ -262,10 +262,11 @@ class Model:
             
         # Replace old envelope with new one
         if len(self.envelopes) <= voice_index:
+            # (Note: this warning is always given on program start up.)
             self._debug_1("WARNING: list of envelopes length = " + str(len(self.envelopes)))
         else:
             self.envelopes.pop(voice_index)
-        # Apply an exponential function to the envelope stored in the model.
+        # Apply an exponential function to the envelope and store it in the model.
         self.envelopes.insert(voice_index, np.exp2(new_envelope) - 1)
         return new_envelope
     
