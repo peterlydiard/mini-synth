@@ -465,12 +465,14 @@ class Controller:
         if debug_level >= 2:
             print("synth_control.py: " + message)
 
-# ------------------------------
-# App
-# ------------------------------
 
-synth = Controller()
-synth.main()
-     
+#--------------------------- Test Functions ------------------------------
+if __name__ == "__main__":
 
+    # ------------------------------
+    # App
+    # ------------------------------
+
+    synth = Controller()
+    synth.main()
 
