@@ -109,7 +109,7 @@ class Seq_Editor:
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
-        self.view.on_request_voice_editor_closed()
+        self.view.on_request_seq_editor_closed()
         self.window.destroy()
         
 
