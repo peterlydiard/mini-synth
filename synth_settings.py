@@ -1,7 +1,7 @@
 # load modules
 import csv
 
-def read_synth_settings(filename):
+def read_synth_data(filename):
 
     # first and second column data arrays (strings)
     names = []
@@ -23,16 +23,16 @@ def read_synth_settings(filename):
                 # add cell [1] to list of values
                 values.append(row[1])
                 
-            print("Data read from file: " + filename)
+            print("synth_data.py: Data read from file: " + filename)
 
     except:
-        print("WARNING: file: \'" + filename + "\' not found, or wrong format.")
+        print("synth_data.py: WARNING: file: \'" + filename + "\' not found, or wrong format.")
         
     return names, values
 
 # Write user names and settings to the given file.
 # A new file will be created or an old file will be overwritten.
-def write_synth_settings(filename, names, values):
+def write_synth_data(filename, names, values):
     
     with open(filename, "w", newline='') as csv_data_file:
         
@@ -43,18 +43,18 @@ def write_synth_settings(filename, names, values):
         for i in range(len(names)):
             csv_writer.writerow([names[i], values[i]])
             
-    print("Data written to file: " + filename)
+    print("synth_data.py: Data written to file: " + filename)
 
 #------------------------Module tests-----------------------
 #if __name__ == "__main__":
-def test_synth_settings(filename):
+def test_synth_data(filename):
     # read old settings
-    names, values = read_synth_settings(filename)
+    names, values = read_synth_data(filename)
     
     names.append("Mode")
     values.append(5)
     
-    write_synth_settings(filename, names, values)
+    write_synth_data(filename, names, values)
 
     # print(names, values)
 
