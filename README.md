@@ -1,8 +1,10 @@
 # mini-synth
 
-Simple sound synthesiser using guizero and pygame (mixer)
+Simple sound synthesiser using Python with guizero and pygame (mixer)
 
 Other required modules: numpy, time
+
+Run program from main.py.
 
 ## Warning
 
