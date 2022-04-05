@@ -5,9 +5,9 @@
 import time
 import numpy as np
 import synth_constants as const
-from synth_view import View
-from synth_model import Model
-from synth_settings import read_synth_settings, write_synth_settings
+import synth_view
+import synth_model
+import synth_settings
 
 # ------------------------------
 # Variables
@@ -58,8 +58,8 @@ class Controller:
         self.voices = []
         self.voice_index = 0
         self.num_timeslots = const.MAX_TIMESLOTS
-        self.view = View(self)
-        self.model = Model(self, const.SAMPLE_RATE)
+        self.view = synth_view.View(self)
+        self.model = synth_model.Model(self, const.SAMPLE_RATE)
         self.sequence = Sequence()
         
     def main(self):
@@ -351,10 +351,10 @@ class Controller:
             values.append(int(self.voices[vi].sustain_level))
             names.append(name_prefix + "release")
             values.append(int(self.voices[vi].release))
-        write_synth_settings("synth_settings.txt", names, values)
+        synth_settings.write_synth_data("synth_settings.txt", names, values)
         
     def restore_settings(self):
-        names, values = read_synth_settings("synth_settings.txt")
+        names, values = synth_settings.read_synth_data("synth_settings.txt")
         for i in range(len(names)):
             if names[i] == "sample_rate":
                 self.sample_rate = int(values[i])
@@ -423,11 +423,11 @@ class Controller:
                     if self.sequence.notes[vi, timeslot, key] > 0:
                         names.append(voice_name + timeslot_name + key_name)
                         values.append(int(self.sequence.notes[vi, timeslot, key]))
-        write_synth_settings("sequence.txt", names, values)
+        synth_settings.write_synth_data("sequence.txt", names, values)
 
 
     def restore_sequence(self):
-        names, values = read_synth_settings("sequence.txt")
+        names, values = synth_settings.read_synth_data("sequence.txt")
         for i in range(len(names)):
             if names[i] == "sequence_number":
                 self.sequence.number = int(values[i])
