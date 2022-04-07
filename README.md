@@ -76,7 +76,7 @@ All tones are generated 1000 ms long, regardless of the length of any notes usin
 efficiently.
 
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
-in stereo.
+in stereo. At present, apply_envelope makes a stereo note from a mono tone.
 
 Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience.
 
