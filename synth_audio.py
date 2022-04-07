@@ -1,8 +1,6 @@
 # ------------------------------
 # Imports
 # ------------------------------
-from guizero import App, Window, Drawing, Box, Combo, Slider, Text, TextBox, PushButton, Waffle
-
 import pygame
 import pygame.mixer
 import pygame.sndarray

@@ -1,6 +1,4 @@
 
-import math
-import string
 import numpy as np
 import synth_constants as const
 
@@ -149,7 +147,7 @@ class Model:
         # Bandpass and bandstop (notch) biquadratic filters.
         band_pass = np.zeros(len(tone))
         #notch = np.zeros(len(tone))
-        x0 = x1 = x2 = x3 = x4 = 0
+        x0 = x1 = x2 = 0
         for i in range(len(tone)):
             # Recalculate filter coefficients, every 1.45 milliseconds.
             if i % 64 == 0:
@@ -180,7 +178,7 @@ class Model:
         output = np.multiply(tone, ring_mod_tone)
         return output
     
-    # Apply the envelope amplitude to the tone to make a note
+    # Apply the envelope amplitude to the tone to make a note, and convert it to stereo.
     def apply_envelope(self, voice_index, tone, stereo=True):
         self._debug_2("In apply_envelope() ")
         if tone is None:

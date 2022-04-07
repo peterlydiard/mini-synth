@@ -4,7 +4,6 @@
 # ------------------------------
 import guizero
 import numpy as np
-import time
 import synth_constants as const
 
 # ------------------------------
@@ -318,7 +317,7 @@ class Voice_Editor:
             return
         self.freq_display.value = int(self.view.displayed_frequency)
         left_channel = np.hsplit(wave,2)[0]
-        right_channel = np.hsplit(wave,2)[1]
+        # right_channel = np.hsplit(wave,2)[1]
         self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
         max_level = np.max(np.abs(left_channel))
         if max_level == 0:
@@ -418,7 +417,7 @@ class Voice_Editor:
     #-------------------- Event Handlers --------------------
        
     def _handle_new_voice(self):
-        self._debug_2("In _handle_new_voice: " + str(value))
+        self._debug_2("In _handle_new_voice: ")
         # Request new voice
         self.view.controller.on_request_new_voice()        
         

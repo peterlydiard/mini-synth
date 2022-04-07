@@ -3,7 +3,6 @@
 # ------------------------------
 import guizero
 import numpy as np
-import time
 import synth_constants as const
 import synth_audio
 import voice_editor
