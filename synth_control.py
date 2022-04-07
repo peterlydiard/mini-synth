@@ -113,13 +113,11 @@ class Controller:
         else:
             self._debug_1("ERROR: unexpected voice index = " + str(voice))
 
-    def on_request_note(self, key, voice_index = -1):
+    def on_request_note(self, key, voice_index=-1):
         self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
-        # Calculate frequency to display
         self.current_key = key
-        self.frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
-        if voice_index < 0: # If no voice_index given, use last stored value.
-            voice_index = self.voice_index
+        if voice_index >= 0:
+            self.voice_index = voice_index
         self._play_current_note()            
         
     def on_request_waveform(self, waveform):
@@ -220,11 +218,14 @@ class Controller:
                    
     def _play_current_note(self):
         self._debug_2("In _play_current_note().")        
-        tone = self.model.fetch_tone(self.voice_index, self.current_key)
+        tone, frequency = self.model.fetch_tone(self.voice_index, self.current_key)
         note = self.model.apply_envelope(self.voice_index, tone) 
         if not note is None:
             self.view.play_sound(note)
             self.view.show_sound(note)
+            self.view.show_frequency(frequency)
+        else:
+            self._debug_1("WARNING: No note in _play_current_note().")
             
     def on_request_play(self):
         self._debug_2("In on_request_play().")
@@ -239,7 +240,8 @@ class Controller:
         time_asleep = 0
         key = 0
         while key < 100:
-            tone = self.model.fetch_tone(self.voice_index, key % const.NUM_KEYS)
+            tone, frequency = self.model.fetch_tone(self.voice_index, key % const.NUM_KEYS)
+            self.frequency = frequency # noqa
             note = self.model.apply_envelope(self.voice_index, tone) 
             if not note is None:
                 self.view.play_sound(note)
@@ -283,7 +285,8 @@ class Controller:
             for vi in range(self.num_voices):
                 for key in range(const.NUM_KEYS):
                     if self.sequence.notes[vi, timeslot, key] > 0:
-                        tone = self.model.fetch_tone(vi, key)
+                        tone, frequency = self.model.fetch_tone(vi, key)
+                        self.frequncy = frequency # noqa
                         note = self.model.apply_envelope(vi, tone) 
                         if not note is None:
                             self.view.play_sound(note)

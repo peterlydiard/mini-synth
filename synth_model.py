@@ -17,7 +17,8 @@ class Model:
         self.max_duration = max_duration   # milliseconds
         self.duration = duration           # milliseconds
         self.stereo = stereo               # Boolean
-        self.envelopes = [] 
+        self.envelopes = []
+        self.frequencies = np.zeros((const.MAX_VOICES, const.NUM_KEYS), dtype=int)
         self.voices = np.zeros((const.MAX_VOICES, const.NUM_KEYS, (int(sample_rate * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
 
 
@@ -337,7 +338,9 @@ class Model:
             ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
             if ring_mod_rate > 0:
                 tone = self._apply_ring_modulation(tone, frequency, ring_mod_rate)
-            
+        
+        # Save frequency for this tone
+        self.frequencies[voice_index, key] = centre_frequency
         # Save tone in voices array    
         self.voices[voice_index, key] = tone
             
@@ -354,7 +357,9 @@ class Model:
         if tone[0] < -2:
             self.make_tone(voice_index, key)
             tone = self.voices[voice_index, key]
-        return tone        
+            
+        frequency = self.frequencies[voice_index, key]
+        return tone, frequency       
                 
     def _debug_1(self, message):
         global debug_level

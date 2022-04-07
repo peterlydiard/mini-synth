@@ -30,9 +30,9 @@ NUM_KEYS = (12 * const.NUM_OCTAVES) + 1
 
 # Widget sizes
 
-SCOPE_HEIGHT = 280
-SCOPE_WIDTH = 500
 VOICE_EDITOR_WIDTH = KEYBOARD_WIDTH + 50
+SCOPE_HEIGHT = 280
+SCOPE_WIDTH = VOICE_EDITOR_WIDTH - 440
 NUM_TONE_SLIDERS = 3 + (2 * const.UNISON_ENABLED) + const.HARMONIC_BOOST_ENABLED + const.RING_MODULATION_ENABLED
 NUM_ENVELOPE_SLIDERS = 5 + (2 * const.TREMOLO_ENABLED)
 VOICE_EDITOR_HEIGHT = 200 + max(50 + (NUM_TONE_SLIDERS * 40), SCOPE_HEIGHT) + max(NUM_ENVELOPE_SLIDERS * 40, SCOPE_HEIGHT)
@@ -47,6 +47,7 @@ class Voice_Editor:
     def __init__(self, view):
         self.view = view
         self.previous_key = 0
+        self.displayed_frequency = const.LOWEST_TONE
        
 
     def main(self):
@@ -74,7 +75,7 @@ class Voice_Editor:
         self.panel_1 = guizero.Box(self.window, layout="grid", border=10)
         self.panel_1.set_border(thickness=10, color=self.view.app.bg)
         freq_label = guizero.Text(self.panel_1, grid=[0,0], text="Tone frequency, Hz: ")
-        self.freq_display = guizero.Text(self.panel_1, grid=[1,0], text=str(self.view.displayed_frequency))
+        self.freq_display = guizero.Text(self.panel_1, grid=[1,0], text=str(self.displayed_frequency))
         guizero.Text(self.panel_1, grid=[2,0], text="  ")
         duration_label = guizero.Text(self.panel_1, grid=[3,0], text="Note length, ms: ")
         self.duration_display = guizero.Text(self.panel_1, grid=[4,0], text="0")
@@ -241,7 +242,6 @@ class Voice_Editor:
         self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
         self.tremolo_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_rate
         self.tremolo_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_depth
-        self.freq_display.value = int(self.view.displayed_frequency)
         if waveform == "Sawtooth" or waveform == "Square":
             self.width_label.show()
             self.width_slider.show()
@@ -268,7 +268,11 @@ class Voice_Editor:
             self.harmonic_boost_label.hide()
             self.harmonic_boost_slider.hide()
 
-        
+    def show_frequency(self, frequency):
+        self._debug_2("In show_frequency()")
+        self.displayed_frequency = int(frequency)
+        self.freq_display.value = self.displayed_frequency
+
     def plot_envelope(self, envelope):
         self._debug_2("In plot_envelope()")
         self.control_scope.clear()
@@ -315,7 +319,6 @@ class Voice_Editor:
         if self.voice_window_open == False:
             self._debug_2("Can't plot sounds as voice editor window is closed.")
             return
-        self.freq_display.value = int(self.view.displayed_frequency)
         left_channel = np.hsplit(wave,2)[0]
         # right_channel = np.hsplit(wave,2)[1]
         self._debug_2("Waveform length in _plot_sound() = " + str(len(wave)))
@@ -510,7 +513,6 @@ class Voice_Editor:
         key = self._identify_key_number(event.x, event.y)
         if key >= 0:
             if key != self.previous_key:
-                self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
                 self.view.controller.on_request_note(key)
         else:
             self._debug_2("Not a key")
@@ -520,7 +522,6 @@ class Voice_Editor:
         self._debug_2("Mouse left button pressed event at: (" + str(event.x) + ", " + str(event.y) + ")")
         key = self._identify_key_number(event.x, event.y)
         if key >= 0:
-            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)          
             self.view.controller.on_request_note(key)
         else:
             self._debug_2("Not a key")        

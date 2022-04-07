@@ -70,6 +70,12 @@ class View:
             self.seq_editor.show_sequence()            
         
 
+    def show_frequency(self, frequency):
+        self._debug_2("In show_frequency()")
+        if self.voice_window_open == True:
+            self.voice_editor.show_frequency(frequency)
+                
+        
     def show_sound(self, wave):
         if self.voice_window_open == True:
             self.voice_editor.plot_sound(wave)
