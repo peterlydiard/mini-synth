@@ -48,8 +48,6 @@ If you edit the online version of this file, it may conflict with other changes 
 Changing the voice causes a note to be played several times in response to each parameter that changes. Guizero seems
 to respond to the program writing new slider values in the same way as when the user manually moves the slider.
 
-It is possible to open more than one voice editor window, but only one will reflect the correct state of the program.
-
 If the program crashes while running a library module (e.g. guizero) then it can be difficult to find the cause.
 
 The Model class has a copy of the sample_rate parameter that is in the Controller class. This may be unecessary.
@@ -78,7 +76,9 @@ All tones are generated 1000 ms long, regardless of the length of any notes usin
 efficiently.
 
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
-in stereo. Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience.
+in stereo.
+
+Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience.
 
 Using 1000 ms tone samples and 1 Hz frequency resolution means that the waveform passes through zero at the start and end. This
 could enable the production of notes longer than 1000 ms. Vibrato and unison should not be a problem, if the tones used are
@@ -90,7 +90,13 @@ parameter, being used as the number of notes per bar in the sequencer. A bit con
 If quantisation is used, should this be before or after envelope shaping and mixing? If before, this would give a more consistent
 effect.
 
+According to the normal MVC design pattern, database access should be via the model object. Here it is via the controller object,
+which is more convenient as the voice and sequence parameters live there.
+
 ## Notes
+
+Some tremolo settings create a sharp drop at the end of the envelope which produces a clicking sound. The settings will
+have to be adjusted if this sound is unwanted.
 
 When passing around notes in a sequence, it may be appropriate to group them by timeslot, so that only the information
 that is needed for audio production, or for display is being moved around.
@@ -109,7 +115,8 @@ When controlling the VCF from the envelope shaper, a frequency offset linked to 
 should perhaps be applied, to give the same kind of tone colour variation in all octaves.
 
 The Elektor Formant uses exponential amplitude control in its Voltage Controlled Amplifier for the main envelope
-and linear modulation for tremolo effects.
+and linear modulation for tremolo effects. This design uses an exponential function on the envelope after tremolo has
+been added.
 
 All notes are currently the same loudness and duration. A more complicated screen KB interface might get around this.
 Some synths modify the ADSR length with pitch using "key follow". 

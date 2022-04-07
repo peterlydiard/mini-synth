@@ -55,9 +55,12 @@ class View:
         
         
     def open_voice_editor(self):
-        self.voice_editor = voice_editor.Voice_Editor(self)
-        self.voice_editor.main()
-        self.voice_window_open = True
+        if not self.voice_window_open:
+            self.voice_editor = voice_editor.Voice_Editor(self)
+            self.voice_editor.main()
+            self.voice_window_open = True
+        else:
+            self._debug_1("WARNING: Voice editor window already exists.")
         
         
     def show_new_settings(self):
@@ -84,9 +87,12 @@ class View:
         
         
     def open_sequence_editor(self):
-        self.seq_editor = seq_editor.Seq_Editor(self)
-        self.seq_editor.main()
-        self.sequence_window_open = True                    
+        if not self.sequence_window_open:
+            self.seq_editor = seq_editor.Seq_Editor(self)
+            self.seq_editor.main()
+            self.sequence_window_open = True
+        else:
+            self._debug_1("WARNING: Sequence editor window already exists.")                    
         
 
     def on_request_seq_editor_closed(self):
