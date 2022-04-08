@@ -13,15 +13,16 @@ import synth_constants as const
 
 white_keys = [0, 2, 4, 5, 7, 9, 11]
 black_keys = [1, 3, -1000, 6, 8, 10, -1000]
-KEY_X_SPACING = 40
+NUM_WHITE_KEYS = int((7 * const.NUM_OCTAVES) + 1)
+KEY_X_SPACING = int(min(40, (1200 / NUM_WHITE_KEYS)))
 WK_X0 = 25
 WK_Y0 = 25
-BK_X0 = 45
+BK_X0 = int(25 + KEY_X_SPACING/2)
 BK_Y0 = 25
 WK_HEIGHT = 60
-WK_WIDTH = 30
+WK_WIDTH = int(0.75 * KEY_X_SPACING)
 BK_HEIGHT = 30
-BK_WIDTH = 30
+BK_WIDTH = int(0.75 * KEY_X_SPACING)
 KEYBOARD_WIDTH = (7 * const.NUM_OCTAVES  * KEY_X_SPACING) + WK_WIDTH + (2 * WK_X0)
 KEYBOARD_HEIGHT = WK_HEIGHT + (2 *  WK_Y0)
 NUM_WHITE_KEYS = (const.NUM_OCTAVES * 7) + 1
