@@ -158,7 +158,7 @@ if __name__ == "__main__":
     const.SAMPLE_RATE = 44100
     MAX_VOICES = 12
     MAX_TIMESLOTS = 60
-    const.LOWEST_TONE = 110
+    LOWEST_TONE = 110
     DEFAULT_FREQUENCY = 440
     DEFAULT_ATTACK = 20
     DEFAULT_DECAY = 20
@@ -230,7 +230,7 @@ if __name__ == "__main__":
             self.view._debug_2("Set key to " + str(key))
             # Calculate frequency to display
             self.current_key = key
-            self.displayed_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
+            self.displayed_frequency = int((LOWEST_TONE * np.power(2, key/12)) + 0.5)
             self.view.show_new_settings()
         
         def on_request_width(self, width):
