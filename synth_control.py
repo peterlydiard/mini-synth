@@ -71,7 +71,7 @@ class Controller:
             self.voices[voice_index].colour = self.make_voice_colour(voice_index)
         self.restore_settings()
         self.restore_sequence()
-        self.model.main()
+        self.model.main(self.num_voices)
         self.view.main() # This function does not return control here.
         
     def make_voice_colour(self, voice_index):

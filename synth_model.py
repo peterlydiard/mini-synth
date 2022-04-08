@@ -22,8 +22,8 @@ class Model:
         self.voices = np.zeros((const.MAX_VOICES, const.NUM_KEYS, (int(sample_rate * const.MAX_ENVELOPE_TIME / 1000))), dtype=float)
 
 
-    def main(self, max_voices=const.MAX_VOICES):
-        for voice_index in range(const.MAX_VOICES):
+    def main(self, num_voices=const.MAX_VOICES):
+        for voice_index in range(num_voices):
             self.make_voice(voice_index)
             envelope = self.make_envelope(voice_index)
             self.envelopes.append(envelope)
