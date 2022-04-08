@@ -8,6 +8,11 @@ import synth_constants as const
 # ------------------------------
 # Module globals
 # ------------------------------
+
+MAX_WINDOW_HEIGHT = 800
+WAFFLE_PIXEL_DIM = int((MAX_WINDOW_HEIGHT - 80) // const.NUM_KEYS)
+WINDOW_WIDTH = max(800, int((const.MAX_TIMESLOTS + 7) * WAFFLE_PIXEL_DIM))
+WINDOW_HEIGHT = (const.NUM_KEYS * WAFFLE_PIXEL_DIM) + 80
 debug_level = 2
 
 # ------------------------------
@@ -27,14 +32,14 @@ class Seq_Editor:
         
         
     def _sequence_editor_window(self):
-        self.window = guizero.Window(self.view.app, "Sequence editor", width = 1200, height = 750)
+        self.window = guizero.Window(self.view.app, "Sequence editor", width = WINDOW_WIDTH, height = WINDOW_HEIGHT)
         self.sequence_window_open = True
         self.window.when_closed = self._closed_sequence_editor
         
         self.seq_box = guizero.Box(self.window, layout="grid")
        
         self.board = guizero.Waffle(self.seq_box, grid=[0,0], align="bottom", width=const.MAX_TIMESLOTS+3, height=const.NUM_KEYS,
-                                    pad=0, dim=18, command=self._handle_toggle_seq_note)
+                                    pad=0, dim=WAFFLE_PIXEL_DIM, command=self._handle_toggle_seq_note)
 
         self._draw_seq_keyboard(const.NUM_OCTAVES)
         
