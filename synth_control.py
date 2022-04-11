@@ -47,6 +47,7 @@ class Sequence:
         self.name = "Blank"
         self.beats_per_bar = 4
         self.tempo = 100
+        self.length = 0
         self.notes = np.zeros((const.MAX_VOICES, const.MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
 class Controller:
@@ -260,9 +261,12 @@ class Controller:
         if self.sequence.notes[voice_index, timeslot, key] == 1:
             self.sequence.notes[voice_index, timeslot, key] = 0
             self._debug_2("Cleared note.")
+            # Note: sequence length is recalcualted when sequence is read back from the file.
         else:
             self.sequence.notes[voice_index, timeslot, key] = 1
             self._debug_2("Set note.")
+            if timeslot >= self.sequence.length:
+                self.sequence.length = timeslot + 1
         
     def on_request_beats(self, value):
         self._debug_2("Set beats/bar to " + str(value))
@@ -280,7 +284,7 @@ class Controller:
         self._debug_1("Timer start = " + str(start))
         next_time = start + note_spacing_secs
         time_asleep = 0
-        while timeslot < const.MAX_TIMESLOTS:
+        while timeslot < self.sequence.length:
             self._debug_2("Timeslot = " + str(timeslot))
             for vi in range(self.num_voices):
                 for key in range(const.NUM_KEYS):
@@ -440,6 +444,7 @@ class Controller:
                 self.sequence.beats_per_bar = int(values[i])  
             if names[i] == "sequence_tempo":
                 self.sequence.tempo = int(values[i])
+            self.sequence.length = 0  # length is calulated below!          
             for vi in range(self.num_voices):
                 voice_name = "voice_" + str(vi) + "_"
                 for timeslot in range(self.num_timeslots):
@@ -448,6 +453,7 @@ class Controller:
                         key_name = "key_" + str(key)
                         if names[i] == voice_name + timeslot_name + key_name:
                             self.sequence.notes[vi, timeslot, key] = values[i]
+                            self.sequence.length = timeslot + 1
 
 
     # ------------------------------

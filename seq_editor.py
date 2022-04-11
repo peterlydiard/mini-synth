@@ -9,9 +9,10 @@ import synth_constants as const
 # Module globals
 # ------------------------------
 
+NUM_VISIBLE_TIMESLOTS = 60
 MAX_WINDOW_HEIGHT = 800
 WAFFLE_PIXEL_DIM = int((MAX_WINDOW_HEIGHT - 80) // const.NUM_KEYS)
-WINDOW_WIDTH = max(800, int((const.MAX_TIMESLOTS + 7) * WAFFLE_PIXEL_DIM))
+WINDOW_WIDTH = max(800, int((NUM_VISIBLE_TIMESLOTS + 7) * WAFFLE_PIXEL_DIM))
 WINDOW_HEIGHT = (const.NUM_KEYS * WAFFLE_PIXEL_DIM) + 80
 debug_level = 2
 
@@ -23,6 +24,7 @@ class Seq_Editor:
     def __init__(self, view):
         self.view = view
         self.seq_voice_checks = []
+        self.seq_offset = 0
        
 
     def main(self):
@@ -38,7 +40,7 @@ class Seq_Editor:
         
         self.seq_box = guizero.Box(self.window, layout="grid")
        
-        self.board = guizero.Waffle(self.seq_box, grid=[0,0], align="bottom", width=const.MAX_TIMESLOTS+3, height=const.NUM_KEYS,
+        self.board = guizero.Waffle(self.seq_box, grid=[0,0], align="bottom", width=NUM_VISIBLE_TIMESLOTS+3, height=const.NUM_KEYS,
                                     pad=0, dim=WAFFLE_PIXEL_DIM, command=self._handle_toggle_seq_note)
 
         self._draw_seq_keyboard(const.NUM_OCTAVES)
@@ -58,6 +60,11 @@ class Seq_Editor:
         self.seq_tempo_label = guizero.Text(self.seq_controls, grid=[4,0], text="Tempo, bpm")
         self.seq_tempo_slider = guizero.Slider(self.seq_controls, grid=[5,0], start=30, end=200, width=342, command=self._handle_set_tempo)
         self.seq_play_button = guizero.PushButton(self.seq_controls, grid=[6,0], text="Play", command=self._handle_play_sequence)
+        guizero.Text(self.seq_controls, grid=[7,0], text="    ")
+        self.seq_scroll_label = guizero.Text(self.seq_controls, grid=[8,0], text="Scroll")
+        self.seq_scroll_slider = guizero.Slider(self.seq_controls, grid=[9,0], start=0, end=const.MAX_TIMESLOTS - NUM_VISIBLE_TIMESLOTS,
+                                                width=303, command=self._handle_scroll)
+        
         self.seq_select_box = guizero.Box(self.seq_box, grid=[0,2], layout="grid")
         for i in range(self.view.controller.num_voices):
             voice_name = "Voice " + str(i+1)
@@ -67,8 +74,7 @@ class Seq_Editor:
             
        
     def _draw_seq_keyboard(self, num_octaves=const.NUM_OCTAVES):
-        self._debug_2("In _draw_seq_keyboard()")
-              
+        self._debug_2("In _draw_seq_keyboard()")              
         for i in range(12 * const.NUM_OCTAVES + 1):
             if (i % 12) in [1,3,6,8,10]:
                 self.board.set_pixel(0, 12 * const.NUM_OCTAVES - i, "black")
@@ -79,12 +85,12 @@ class Seq_Editor:
         self._debug_2("In _draw_seq_octaves()")
         for i in range(const.NUM_OCTAVES + 1):
             key = 12 * i
-            for timeslot in range(self.view.controller.num_timeslots + 3):
+            for timeslot in range(NUM_VISIBLE_TIMESLOTS + 3):
                 self.board.set_pixel(timeslot, const.NUM_KEYS - 1 - key, (230,230,230))
         
     def _draw_seq_bars(self):
         self._debug_2("In _draw_seq_bars()")
-        for timeslot in range(self.view.controller.num_timeslots):
+        for timeslot in range(NUM_VISIBLE_TIMESLOTS):
             if (timeslot % self.view.controller.sequence.beats_per_bar == 0):
                 for key in range(12 * const.NUM_OCTAVES + 1):
                     self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, (230,230,230))
@@ -93,11 +99,14 @@ class Seq_Editor:
         self._debug_2("In _draw_seq_notes()")
         for vi in range(self.view.controller.num_voices):
             if self.seq_voice_checks[vi].value == 1:
-                for timeslot in range(self.view.controller.num_timeslots):
+                for column in range(NUM_VISIBLE_TIMESLOTS):
                     for key in range(12 * const.NUM_OCTAVES + 1):
-                        if self.view.controller.sequence.notes[vi, timeslot, key] > 0:
+                        if (
+                            column + self.seq_offset < self.view.controller.num_timeslots
+                            and self.view.controller.sequence.notes[vi, column + self.seq_offset, key] > 0
+                        ):
                             colour = self.view.controller.voices[vi].colour
-                            self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
+                            self.board.set_pixel(column+3, const.NUM_KEYS - 1 - key, colour)
 
     def show_sequence(self):
         self._debug_2("In show_sequence()")
@@ -111,6 +120,7 @@ class Seq_Editor:
             self._handle_update_board()
         except:
             self._debug_1("Fatal ERROR in show_sequence().")
+            
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
@@ -144,7 +154,11 @@ class Seq_Editor:
         self._debug_2("In _handle_play_sequence()")
         self.view.controller.on_request_play_sequence()
 
-    
+    def _handle_scroll(self, value):
+        self._debug_2("In _handle_scroll()")
+        self.seq_offset = int(value)
+        self._handle_update_board()
+        
     def _handle_toggle_seq_note(self, x, y):
         self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
         key = (12 * const.NUM_OCTAVES) - y
@@ -153,12 +167,12 @@ class Seq_Editor:
             if x > 2:
                 timeslot = x - 3
                 vi = self.view.controller.voice_index
-                if self.view.controller.sequence.notes[vi, timeslot, key] > 0:
+                if self.view.controller.sequence.notes[vi, timeslot + self.seq_offset, key] > 0:
                     colour = "white"
                 else:
                     colour = self.view.controller.voices[vi].colour
                 self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
-                self.view.controller.on_request_toggle_sequence_note(timeslot, vi, key)
+                self.view.controller.on_request_toggle_sequence_note(timeslot + self.seq_offset, vi, key)
         else:
             self._debug_2("Not a key")
     

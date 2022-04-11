@@ -110,7 +110,7 @@ class View:
         if self.sequence_window_open == True:
             self.seq_editor.show_sequence()           
 
-    
+        
     def play_sound(self, wave):
         self._debug_2("In play_sound()")
         synth_audio.play_sound(wave)
@@ -286,6 +286,9 @@ if __name__ == "__main__":
             
         def on_request_play_sequence(self):
             self.view._debug_2("Play sequence requested")
+            
+        def save_sequence(self):
+            self.view._debug_2("Save sequence requested")
             
         def on_request_shutdown(self):
             self._debug_2("Shutdown requested")
