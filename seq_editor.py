@@ -53,7 +53,7 @@ class Seq_Editor:
         self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=voice_name_list,
                                      height="fill", command=self._handle_set_seq_voice)
         self.seq_voice_text = guizero.Text(self.seq_controls, grid=[1,0], text="    ",
-                                           bg=self.view.controller.voices[self.view.controller.voice_index].colour)
+                                           bg=self.view.controller.voice_params[self.view.controller.voice_index].colour)
         self.seq_beats_combo = guizero.Combo(self.seq_controls, grid=[2,0], options=["3 beats/bar", "4 beats/bar", "5 beats/bar"],
                                      height="fill", command=self._handle_set_seq_beats)
         guizero.Text(self.seq_controls, grid=[3,0], text="    ")
@@ -69,7 +69,7 @@ class Seq_Editor:
         for i in range(self.view.controller.num_voices):
             voice_name = "Voice " + str(i+1)
             self.seq_voice_checks.append(guizero.CheckBox(self.seq_select_box, grid=[i,1], text=voice_name, command=self._handle_update_board))
-            self.seq_voice_checks[i].text_color = self.view.controller.voices[i].colour
+            self.seq_voice_checks[i].text_color = self.view.controller.voice_params[i].colour
             self.seq_voice_checks[i].value = 1
             
        
@@ -105,7 +105,7 @@ class Seq_Editor:
                             column + self.seq_offset < self.view.controller.num_timeslots
                             and self.view.controller.sequence.notes[vi, column + self.seq_offset, key] > 0
                         ):
-                            colour = self.view.controller.voices[vi].colour
+                            colour = self.view.controller.voice_params[vi].colour
                             self.board.set_pixel(column+3, const.NUM_KEYS - 1 - key, colour)
 
     def show_sequence(self):
@@ -113,7 +113,7 @@ class Seq_Editor:
         try:
             voice_name = "Voice " + str(self.view.controller.voice_index + 1)
             self.view.update_combo(self.seq_voice_combo, voice_name)
-            self.seq_voice_text.bg = self.view.controller.voices[self.view.controller.voice_index].colour
+            self.seq_voice_text.bg = self.view.controller.voice_params[self.view.controller.voice_index].colour
             self.seq_tempo_slider.value = self.view.controller.sequence.tempo
             beats_name = str(self.view.controller.sequence.beats_per_bar) + " beats/bar"
             self.view.update_combo(self.seq_beats_combo, beats_name)
@@ -170,7 +170,7 @@ class Seq_Editor:
                 if self.view.controller.sequence.notes[vi, timeslot + self.seq_offset, key] > 0:
                     colour = "white"
                 else:
-                    colour = self.view.controller.voices[vi].colour
+                    colour = self.view.controller.voice_params[vi].colour
                 self.board.set_pixel(timeslot+3, const.NUM_KEYS - 1 - key, colour)
                 self.view.controller.on_request_toggle_sequence_note(timeslot + self.seq_offset, vi, key)
         else:

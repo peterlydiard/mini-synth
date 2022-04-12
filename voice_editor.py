@@ -115,32 +115,32 @@ class Voice_Editor:
         self.harmonic_boost_label = guizero.Text(self.voice_sliders_panel, grid=[0,2], text="Harmonic boost, %: ")
         self.harmonic_boost_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,2], start=0, end=const.MAX_HARMONIC_BOOST,
                                      width=200, command=self._handle_set_harmonic_boost)
-        self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
+        self.harmonic_boost_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].harmonic_boost
         
         self.vibrato_rate_label = guizero.Text(self.voice_sliders_panel, grid=[0,3], text="Vibrato rate, %: ")
         self.vibrato_rate_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,3], start=0, end=const.MAX_VIBRATO_RATE,
                                      width=200, command=self._handle_set_vibrato_rate)
-        self.vibrato_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
+        self.vibrato_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].vibrato_rate
         
         self.vibrato_depth_label = guizero.Text(self.voice_sliders_panel, grid=[0,4], text="Vibrato depth, %: ")
         self.vibrato_depth_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,4], start=0, end=const.MAX_VIBRATO_DEPTH,
                                      width=200, command=self._handle_set_vibrato_depth)
-        self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
+        self.vibrato_depth_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].vibrato_depth
         
         self.unison_voices_label = guizero.Text(self.voice_sliders_panel, grid=[0,5], text="Unison voices: ")
         self.unison_voices_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,5], start=1, end=const.MAX_UNISON_VOICES,
                                      width=200, command=self._handle_set_unison_voices)
-        self.unison_voices_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_voices
+        self.unison_voices_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].unison_voices
         
         self.unison_detune_label = guizero.Text(self.voice_sliders_panel, grid=[0,6], text="Unison detune, %: ")
         self.unison_detune_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,6], start=0, end=const.MAX_UNISON_DETUNE,
                                      width=200, command=self._handle_set_unison_detune)
-        self.unison_detune_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_detune
+        self.unison_detune_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].unison_detune
         
         self.ring_mod_label = guizero.Text(self.voice_sliders_panel, grid=[0,7], text="Ring modulation rate, %: ")
         self.ring_mod_rate_slider = guizero.Slider(self.voice_sliders_panel, grid=[1,7], start=0, end=const.MAX_RING_MOD_RATE,
                                      width=200, command=self._handle_set_ring_mod_rate)
-        self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
+        self.ring_mod_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].ring_mod_rate
         
         if not const.HARMONIC_BOOST_ENABLED:
             self.harmonic_boost_label.hide()
@@ -166,37 +166,37 @@ class Voice_Editor:
         guizero.Text(self.envelope_settings_panel, grid=[0,0], text="Attack time, ms: ")
         self.attack_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,0], start=1, end=const.MAX_ATTACK,
                                     width=200, command=self._handle_set_attack)
-        self.attack_slider.value = self.view.controller.voices[self.view.controller.voice_index].attack
+        self.attack_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].attack
         
         guizero.Text(self.envelope_settings_panel, grid=[0,1], text="Decay time, ms:")
         self.decay_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,1], start=1, end=const.MAX_DECAY,
                                    width=200, command=self._handle_set_decay)
-        self.decay_slider.value = self.view.controller.voices[self.view.controller.voice_index].decay
+        self.decay_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].decay
         
         guizero.Text(self.envelope_settings_panel, grid=[0,2], text="Sustain time, ms: ")
         self.sustain_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,2], start=0, end=const.MAX_SUSTAIN,
                                      width=200, command=self._handle_set_sustain)
-        self.sustain_slider.value = self.view.controller.voices[self.view.controller.voice_index].sustain_time
+        self.sustain_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].sustain_time
 
         guizero.Text(self.envelope_settings_panel, grid=[0,3], text="Sustain level, %: ")
         self.sustain_level_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,3], start=10, end=100,
                                            width=200, command=self._handle_set_sustain_level)
-        self.sustain_level_slider.value = self.view.controller.voices[self.view.controller.voice_index].sustain_level
+        self.sustain_level_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].sustain_level
         
         guizero.Text(self.envelope_settings_panel, grid=[0,4], text="Release time, ms: ")
         self.release_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,4], start=1, end=const.MAX_RELEASE,
                                      width=200, command=self._handle_set_release)
-        self.release_slider.value = self.view.controller.voices[self.view.controller.voice_index].release
+        self.release_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].release
             
         self.tremolo_rate_label = guizero.Text(self.envelope_settings_panel, grid=[0,5], text="Tremolo rate, Hz: ")
         self.tremolo_rate_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,5], start=0, end=const.MAX_TREMOLO_RATE,
                                      width=200, command=self._handle_set_tremolo_rate)
-        self.tremolo_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_rate
+        self.tremolo_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].tremolo_rate
         
         self.tremolo_depth_label = guizero.Text(self.envelope_settings_panel, grid=[0,6], text="Tremolo depth, %: ")
         self.tremolo_depth_slider = guizero.Slider(self.envelope_settings_panel, grid=[1,6], start=0, end=const.MAX_TREMOLO_DEPTH,
                                      width=200, command=self._handle_set_tremolo_depth)
-        self.tremolo_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_depth
+        self.tremolo_depth_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].tremolo_depth
         
         if not const.TREMOLO_ENABLED:
             self.tremolo_rate_label.hide()
@@ -231,29 +231,29 @@ class Voice_Editor:
                                      height="fill", command=self._handle_set_voice)
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.voice_combo, voice_name)
-        waveform = self.view.controller.voices[self.view.controller.voice_index].waveform
+        waveform = self.view.controller.voice_params[self.view.controller.voice_index].waveform
         self.view.update_combo(self.waveform_combo, waveform)
-        self.attack_slider.value = str(self.view.controller.voices[self.view.controller.voice_index].attack)
-        self.decay_slider.value = self.view.controller.voices[self.view.controller.voice_index].decay
-        self.sustain_slider.value = self.view.controller.voices[self.view.controller.voice_index].sustain_time
-        self.sustain_level_slider.value = self.view.controller.voices[self.view.controller.voice_index].sustain_level
-        self.release_slider.value = self.view.controller.voices[self.view.controller.voice_index].release
-        self.vibrato_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_rate
-        self.vibrato_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].vibrato_depth
-        self.ring_mod_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].ring_mod_rate
-        self.tremolo_rate_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_rate
-        self.tremolo_depth_slider.value = self.view.controller.voices[self.view.controller.voice_index].tremolo_depth
+        self.attack_slider.value = str(self.view.controller.voice_params[self.view.controller.voice_index].attack)
+        self.decay_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].decay
+        self.sustain_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].sustain_time
+        self.sustain_level_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].sustain_level
+        self.release_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].release
+        self.vibrato_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].vibrato_rate
+        self.vibrato_depth_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].vibrato_depth
+        self.ring_mod_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].ring_mod_rate
+        self.tremolo_rate_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].tremolo_rate
+        self.tremolo_depth_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].tremolo_depth
         if waveform == "Sawtooth" or waveform == "Square":
             self.width_label.show()
             self.width_slider.show()
-            self.width_slider.value = self.view.controller.voices[self.view.controller.voice_index].width
+            self.width_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].width
             if const.UNISON_ENABLED:
                 self.unison_voices_label.show()
                 self.unison_voices_slider.show()
-                self.unison_voices_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_voices
+                self.unison_voices_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].unison_voices
                 self.unison_detune_label.show()
                 self.unison_detune_slider.show()
-                self.unison_detune_slider.value = self.view.controller.voices[self.view.controller.voice_index].unison_detune
+                self.unison_detune_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].unison_detune
         else:
             self.width_label.hide()
             self.width_slider.hide()
@@ -264,7 +264,7 @@ class Voice_Editor:
         if not waveform == "Sine" and const.HARMONIC_BOOST_ENABLED:
             self.harmonic_boost_label.show()
             self.harmonic_boost_slider.show()
-            self.harmonic_boost_slider.value = self.view.controller.voices[self.view.controller.voice_index].harmonic_boost
+            self.harmonic_boost_slider.value = self.view.controller.voice_params[self.view.controller.voice_index].harmonic_boost
         else:
             self.harmonic_boost_label.hide()
             self.harmonic_boost_slider.hide()

@@ -37,8 +37,8 @@ class Model:
         self._debug_2("No. of samples = " + str(len(times_sec)))
         # Generate a sine wave for the vibrato signal
         time_step = times_sec[1]
-        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
-        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_rate = self.controller.voice_params[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voice_params[self.controller.voice_index].vibrato_depth
         vibrato_radians_per_sec = 2 * np.pi * vibrato_rate * frequency / 500
         vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_sec * times_sec)
         
@@ -62,8 +62,8 @@ class Model:
         # Generate linear ramp with duration*sample_rate steps, ranging between 0 and 2*frequency*duration
         ramp = 2 * frequency * times_sec # e.g. from 0 to 2 * 110 * 0.1 for 110Hz over 0.1 seconds 
         # Generate a sine wave for the vibrato signal
-        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
-        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth / 200
+        vibrato_rate = self.controller.voice_params[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voice_params[self.controller.voice_index].vibrato_depth / 200
         time_step = times_sec[1]
         self._debug_2("time_step = " + str(time_step))
         vibrato_radians_per_sec = 2 * np.pi * vibrato_rate * frequency / 500
@@ -86,8 +86,8 @@ class Model:
                            int(self.sample_rate * self.max_duration / 1000), False)
         
         # Generate a sine wave for the vibrato signal
-        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
-        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_rate = self.controller.voice_params[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voice_params[self.controller.voice_index].vibrato_depth
         vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
         time_step = ramp[1]
         vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
@@ -109,8 +109,8 @@ class Model:
                            int(self.sample_rate * self.max_duration / 1000), False)
 
         # Generate a sine wave for the vibrato signal
-        vibrato_rate = self.controller.voices[self.controller.voice_index].vibrato_rate
-        vibrato_depth = self.controller.voices[self.controller.voice_index].vibrato_depth
+        vibrato_rate = self.controller.voice_params[self.controller.voice_index].vibrato_rate
+        vibrato_depth = self.controller.voice_params[self.controller.voice_index].vibrato_depth
         vibrato_radians_per_msec = 2 * np.pi * vibrato_rate / 1000
         time_step = ramp[1]
         vibrato_tone = vibrato_depth * time_step * np.sin(vibrato_radians_per_msec * ramp) / 100
@@ -124,7 +124,7 @@ class Model:
     
     # Suppress the fundamental frequency and amplify the result to boost the harmonics.
     def _suppress_fundamental(self, tone, frequency):
-        harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
+        harmonic_boost = self.controller.voice_params[self.controller.voice_index].harmonic_boost 
         # Make a frequency control waveform
         freq_control = frequency * np.ones(len(tone), dtype=float)
         filter_q_factor = 2 # Magic number
@@ -211,7 +211,7 @@ class Model:
         
     def make_envelope(self, voice_index):
         self._debug_2("In make_envelope() ")
-        voice = self.controller.voices[voice_index]
+        voice = self.controller.voice_params[voice_index]
         attack = voice.attack
         decay = voice.decay
         sustain_time = voice.sustain_time
@@ -286,6 +286,7 @@ class Model:
         for key in range(const.NUM_KEYS):
             self.make_tone(voice_index, key)         
             
+    # Calculate a constant-volume sound wave for the given voice and key, and save the result in the 'voices' array. 
     def make_tone(self, voice_index, key):
         self._debug_2("In make_tone() ")
         if voice_index >= const.MAX_VOICES:
@@ -294,11 +295,11 @@ class Model:
         if key >= const.NUM_KEYS:
             self._debug_1("ERROR: invalid key in make_tone() = " + str(key))
             return
-        waveform = self.controller.voices[voice_index].waveform
-        width = self.controller.voices[voice_index].width
+        waveform = self.controller.voice_params[voice_index].waveform
+        width = self.controller.voice_params[voice_index].width
         centre_frequency = int((const.LOWEST_TONE * np.power(2, key/12)) + 0.5)
-        unison_voices = self.controller.voices[voice_index].unison_voices
-        unison_detune = self.controller.voices[voice_index].unison_detune
+        unison_voices = self.controller.voice_params[voice_index].unison_voices
+        unison_detune = self.controller.voice_params[voice_index].unison_detune
         gain_adjustment = 1.0 / unison_voices
         if const.UNISON_ENABLED and waveform in ["Sawtooth", "Square"] and unison_voices > 1 and unison_detune > 0:
             frequency_step = int((centre_frequency * unison_detune * const.UNISON_SCALE_FACTOR / (100 * (unison_voices - 1))) + 0.5)
@@ -329,13 +330,13 @@ class Model:
             
         # If boosting harmonics, suppress the tone fundamental frequency.
         if const.HARMONIC_BOOST_ENABLED:
-            harmonic_boost = self.controller.voices[self.controller.voice_index].harmonic_boost 
+            harmonic_boost = self.controller.voice_params[self.controller.voice_index].harmonic_boost 
             if waveform != "Sine" and harmonic_boost > 0:
                 tone = self._suppress_fundamental(tone, frequency)
 
         # Multiply tone by a sine wave proportional to the base tone frequency
         if const.RING_MODULATION_ENABLED:
-            ring_mod_rate = self.controller.voices[self.controller.voice_index].ring_mod_rate
+            ring_mod_rate = self.controller.voice_params[self.controller.voice_index].ring_mod_rate
             if ring_mod_rate > 0:
                 tone = self._apply_ring_modulation(tone, frequency, ring_mod_rate)
         
@@ -344,6 +345,8 @@ class Model:
         # Save tone in voices array    
         self.voices[voice_index, key] = tone
             
+    # Fetch a constant volume sound wave from the 'voices' array of pre-calculated waveforms.
+    # Also return the fundamental frequency.
     def fetch_tone(self, voice_index, key):
         self._debug_2("In fetch_tone()")
         if voice_index >= const.MAX_VOICES:
@@ -356,8 +359,7 @@ class Model:
         # Check if tone needs to be regenerated
         if tone[0] < -2:
             self.make_tone(voice_index, key)
-            tone = self.voices[voice_index, key]
-            
+            tone = self.voices[voice_index, key]            
         frequency = self.frequencies[voice_index, key]
         return tone, frequency       
                 

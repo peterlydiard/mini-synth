@@ -56,7 +56,7 @@ class Controller:
         self.frequency = const.DEFAULT_FREQUENCY
         self.num_voices = 1
         self.current_key = 12
-        self.voices = []
+        self.voice_params = []
         self.voice_index = 0
         self.num_timeslots = const.MAX_TIMESLOTS
         self.view = synth_view.View(self)
@@ -68,8 +68,8 @@ class Controller:
         # Create a list of voice parameter objects for each voice
         for voice_index in range(const.MAX_VOICES):
             voice_params = Voice_Parameters()
-            self.voices.append(voice_params)
-            self.voices[voice_index].colour = self.make_voice_colour(voice_index)
+            self.voice_params.append(voice_params)
+            self.voice_params[voice_index].colour = self.make_voice_colour(voice_index)
         self.restore_settings()
         self.restore_sequence()
         self.model.main(self.num_voices)
@@ -123,17 +123,17 @@ class Controller:
         
     def on_request_waveform(self, waveform):
         self._debug_2("In on_request_waveform: " + waveform)
-        self.voices[self.voice_index].waveform = waveform
+        self.voice_params[self.voice_index].waveform = waveform
         self.view.show_new_settings()
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_width(self, width):
         self._debug_2("In on_request_width: " + str(width))
-        voice = self.voices[self.voice_index]
+        voice = self.voice_params[self.voice_index]
         if voice.waveform == "Sawtooth" or voice.waveform == "Square":
             self._debug_2("Set width to " + str(width))
-            self.voices[self.voice_index].width = float(width)
+            self.voice_params[self.voice_index].width = float(width)
             self.model.scratch_voice(self.voice_index)
             self._play_current_note()
         else:
@@ -141,79 +141,79 @@ class Controller:
 
     def on_request_attack(self, value):
         self._debug_2("In on_request_attack: " + str(value))
-        self.voices[self.voice_index].attack = int(value)
+        self.voice_params[self.voice_index].attack = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_decay(self, value):
         self._debug_2("In on_request_decay: " + str(value))
-        self.voices[self.voice_index].decay = int(value)
+        self.voice_params[self.voice_index].decay = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_sustain(self, value):
         self._debug_2("In on_request_sustain: " + str(value))
-        self.voices[self.voice_index].sustain_time = int(value)
+        self.voice_params[self.voice_index].sustain_time = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_sustain_level(self, value):
         self._debug_2("In on_request_sustain_level: " + str(value))
-        self.voices[self.voice_index].sustain_level = int(value)
+        self.voice_params[self.voice_index].sustain_level = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_release(self, value):
         self._debug_2("In on_request_release: " + str(value))
-        self.voices[self.voice_index].release = int(value)
+        self.voice_params[self.voice_index].release = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_tremolo_rate(self, value):
         self._debug_2("In on_request_tremolo_rate: " + str(value))
-        self.voices[self.voice_index].tremolo_rate = int(value)
+        self.voice_params[self.voice_index].tremolo_rate = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_tremolo_depth(self, value):
         self._debug_2("In on_request_tremolo_depth: " + str(value))
-        self.voices[self.voice_index].tremolo_depth = int(value)
+        self.voice_params[self.voice_index].tremolo_depth = int(value)
         self._change_envelope()
         self._play_current_note()
         
     def on_request_harmonic_boost(self, value):
         self._debug_2("In on_request_harmonic_boost: " + str(value))
-        self.voices[self.voice_index].harmonic_boost = int(value)
+        self.voice_params[self.voice_index].harmonic_boost = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_vibrato_rate(self, value):
         self._debug_2("In on_request_vibrato_rate: " + str(value))
-        self.voices[self.voice_index].vibrato_rate = int(value)
+        self.voice_params[self.voice_index].vibrato_rate = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_vibrato_depth(self, value):
         self._debug_2("In on_request_vibrato_depth: " + str(value))
-        self.voices[self.voice_index].vibrato_depth = int(value)
+        self.voice_params[self.voice_index].vibrato_depth = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_unison_voices(self, value):
         self._debug_2("In on_request_unison_voices: " + str(value))
-        self.voices[self.voice_index].unison_voices = int(value)
+        self.voice_params[self.voice_index].unison_voices = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_unison_detune(self, value):
         self._debug_2("In on_request_unison_detune: " + str(value))
-        self.voices[self.voice_index].unison_detune = int(value)
+        self.voice_params[self.voice_index].unison_detune = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
     def on_request_ring_mod_rate(self, value):
         self._debug_2("In on_request_ring_mod_rate: " + str(value))
-        self.voices[self.voice_index].ring_mod_rate = int(value)
+        self.voice_params[self.voice_index].ring_mod_rate = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
                    
@@ -325,39 +325,39 @@ class Controller:
             name_prefix = "voice_" + str(vi) + "_"
             #print("name_prefix = " + name_prefix)
             names.append(name_prefix + "number")
-            values.append(self.voices[vi].number)
+            values.append(self.voice_params[vi].number)
             names.append(name_prefix + "name")
-            values.append(self.voices[vi].name)
+            values.append(self.voice_params[vi].name)
             names.append(name_prefix + "waveform")
-            values.append(self.voices[vi].waveform)
+            values.append(self.voice_params[vi].waveform)
             names.append(name_prefix + "width")
-            values.append(int(self.voices[vi].width))
+            values.append(int(self.voice_params[vi].width))
             names.append(name_prefix + "harmonic_boost")
-            values.append(int(self.voices[vi].harmonic_boost))
+            values.append(int(self.voice_params[vi].harmonic_boost))
             names.append(name_prefix + "vibrato_rate")
-            values.append(int(self.voices[vi].vibrato_rate))
+            values.append(int(self.voice_params[vi].vibrato_rate))
             names.append(name_prefix + "vibrato_depth")
-            values.append(int(self.voices[vi].vibrato_depth))
+            values.append(int(self.voice_params[vi].vibrato_depth))
             names.append(name_prefix + "unison_voices")
-            values.append(int(self.voices[vi].unison_voices))
+            values.append(int(self.voice_params[vi].unison_voices))
             names.append(name_prefix + "unison_detune")
-            values.append(int(self.voices[vi].unison_detune))
+            values.append(int(self.voice_params[vi].unison_detune))
             names.append(name_prefix + "ring_mod_rate")
-            values.append(int(self.voices[vi].ring_mod_rate))
+            values.append(int(self.voice_params[vi].ring_mod_rate))
             names.append(name_prefix + "tremolo_rate")
-            values.append(int(self.voices[vi].tremolo_rate))
+            values.append(int(self.voice_params[vi].tremolo_rate))
             names.append(name_prefix + "tremolo_depth")
-            values.append(int(self.voices[vi].tremolo_depth))
+            values.append(int(self.voice_params[vi].tremolo_depth))
             names.append(name_prefix + "attack")
-            values.append(int(self.voices[vi].attack))
+            values.append(int(self.voice_params[vi].attack))
             names.append(name_prefix + "decay")
-            values.append(int(self.voices[vi].decay))
+            values.append(int(self.voice_params[vi].decay))
             names.append(name_prefix + "sustain_time")
-            values.append(int(self.voices[vi].sustain_time))
+            values.append(int(self.voice_params[vi].sustain_time))
             names.append(name_prefix + "sustain_level")
-            values.append(int(self.voices[vi].sustain_level))
+            values.append(int(self.voice_params[vi].sustain_level))
             names.append(name_prefix + "release")
-            values.append(int(self.voices[vi].release))
+            values.append(int(self.voice_params[vi].release))
         synth_settings.write_synth_data("synth_settings.txt", names, values)
         
     def restore_settings(self):
@@ -375,37 +375,37 @@ class Controller:
                 for vi in range(self.num_voices):
                     name_prefix = "voice_" + str(vi) + "_"
                     if names[i] == name_prefix + "number":
-                        self.voices[vi].number = int(values[i])
+                        self.voice_params[vi].number = int(values[i])
                     elif names[i] == name_prefix + "name":
-                        self.voices[vi].name = values[i]
+                        self.voice_params[vi].name = values[i]
                     elif names[i] == name_prefix + "waveform":
-                        self.voices[vi].waveform = values[i]
+                        self.voice_params[vi].waveform = values[i]
                     elif names[i] == name_prefix + "width":
-                        self.voices[vi].width = int(values[i])
+                        self.voice_params[vi].width = int(values[i])
                     elif names[i] == name_prefix + "harmonic_boost":
-                        self.voices[vi].harmonic_boost = int(values[i])
+                        self.voice_params[vi].harmonic_boost = int(values[i])
                     elif names[i] == name_prefix + "vibrato_rate":
-                        self.voices[vi].vibrato_rate = int(values[i])
+                        self.voice_params[vi].vibrato_rate = int(values[i])
                     elif names[i] == name_prefix + "vibrato_depth":
-                        self.voices[vi].vibrato_depth = int(values[i])
+                        self.voice_params[vi].vibrato_depth = int(values[i])
                     elif names[i] == name_prefix + "unison_voices":
-                        self.voices[vi].unison_voices = int(values[i])
+                        self.voice_params[vi].unison_voices = int(values[i])
                     elif names[i] == name_prefix + "unison_detune":
-                        self.voices[vi].unison_detune = int(values[i])
+                        self.voice_params[vi].unison_detune = int(values[i])
                     elif names[i] == name_prefix + "ring_mod_rate":
-                        self.voices[vi].ring_mod_rate = int(values[i])
+                        self.voice_params[vi].ring_mod_rate = int(values[i])
                     elif names[i] == name_prefix + "tremolo_rate":
-                        self.voices[vi].tremolo_rate = int(values[i])
+                        self.voice_params[vi].tremolo_rate = int(values[i])
                     elif names[i] == name_prefix + "tremolo_depth":
-                        self.voices[vi].tremolo_depth = int(values[i])
+                        self.voice_params[vi].tremolo_depth = int(values[i])
                     elif names[i] == name_prefix + "attack":
-                        self.voices[vi].attack = int(values[i])
+                        self.voice_params[vi].attack = int(values[i])
                     elif names[i] == name_prefix + "decay":
-                        self.voices[vi].decay = int(values[i])
+                        self.voice_params[vi].decay = int(values[i])
                     elif names[i] == name_prefix + "sustain_time":
-                        self.voices[vi].sustain_time = int(values[i])
+                        self.voice_params[vi].sustain_time = int(values[i])
                     elif names[i] == name_prefix + "sustain_level":
-                        self.voices[vi].sustain_level = int(values[i])
+                        self.voice_params[vi].sustain_level = int(values[i])
                     else:
                         pass # no error reporting!
                     
