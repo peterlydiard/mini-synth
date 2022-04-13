@@ -51,7 +51,7 @@ class Seq_Editor:
             voice_name = "Voice " + str(i+1)
             voice_name_list.append(voice_name)
         self.seq_voice_combo = guizero.Combo(self.seq_controls, grid=[0,0], options=voice_name_list,
-                                     height="fill", command=self._handle_set_seq_voice)
+                                     height="fill", command=self._handle_select_seq_voice)
         self.seq_voice_text = guizero.Text(self.seq_controls, grid=[1,0], text="    ",
                                            bg=self.view.controller.voice_params[self.view.controller.voice_index].colour)
         self.seq_beats_combo = guizero.Combo(self.seq_controls, grid=[2,0], options=["3 beats/bar", "4 beats/bar", "5 beats/bar"],
@@ -128,11 +128,11 @@ class Seq_Editor:
         self.window.destroy()
         
 
-    def _handle_set_seq_voice(self, value):
+    def _handle_select_seq_voice(self, value):
         self._debug_2("In _handle_set_seq_voice: " + str(value))
         # pass on the number part of the string value
         vi = int(value[6:]) - 1
-        self.view.controller.on_request_voice(vi)
+        self.view.controller.on_request_select_voice(vi)
         if self.view.voice_window_open == False:
             self.view.controller.on_request_note(15) # Illustrate new voice
         self.seq_voice_checks[vi].value = 1
@@ -141,13 +141,13 @@ class Seq_Editor:
 
     def _handle_set_seq_beats(self, value):
         self._debug_2("In _handle_set_beats()")
-        self.view.controller.on_request_beats(value[:1])
+        self.view.controller.on_request_set_beats(value[:1])
         self._handle_update_board()
         
         
     def _handle_set_tempo(self, value):
         self._debug_2("In _handle_set_tempo()")
-        self.view.controller.on_request_tempo(value)
+        self.view.controller.on_request_set_tempo(value)
         
         
     def _handle_play_sequence(self):
