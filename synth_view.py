@@ -202,8 +202,8 @@ if __name__ == "__main__":
         def __init__(self):
             self.sample_rate = const.SAMPLE_RATE
             self.frequency = DEFAULT_FREQUENCY
-            self.num_voices = 1
-            self.voices = []
+            self.num_voices = 4
+            self.voice_params = []
             self.voice_index = 0
             self.current_key = 12
             self.num_timeslots = 60
@@ -214,14 +214,19 @@ if __name__ == "__main__":
             self.view._debug_2("In main of test controller")
             for voice_index in range(MAX_VOICES):
                 voice_params = Voice_Parameters()
-                self.voices.append(voice_params)
+                self.voice_params.append(voice_params)
             self.view.main()
 
-        def on_request_voice(self, voice):
-            self._debug_2("Set voice requested, index = " + str(voice))
+        def on_request_new_voice(self):
+            self._debug_2("New voice requested.")
+            
+        def on_request_select_voice(self, voice):
+            self._debug_2("Select voice requested, index = " + str(voice))
         
         def on_request_waveform(self, waveform):
             self.view._debug_2("Set waveform requested: " + waveform)
+            self.voice_params[self.voice_index].waveform = waveform
+            self.view.show_new_settings()
             
         def on_request_frequency(self, frequency):
             self.view._debug_2("Set tone frequency to " + str(frequency) + " Hz")
@@ -265,6 +270,9 @@ if __name__ == "__main__":
         
         def on_request_vibrato_depth(self, value):
             self.view._debug_2("Set vibrato_depth to " + str(value))
+
+        def on_request_ring_mod_rate(self, value):
+            self.view._debug_2("Set ring_mod_rate to " + str(value))
            
         def on_request_play(self):
             self.view._debug_2("Play note requested")
@@ -276,16 +284,19 @@ if __name__ == "__main__":
             self._debug_2("Sequence note requested: timeslot, voice, key = "
                           + str(timeslot) + ", " + str(vi) + ", " + str(key))
             
-        def on_request_beats(self, value):
+        def on_request_set_beats(self, value):
             self._debug_2("Set beats/bar to " + str(value))
             self.sequence.beats_per_bar = int(value)
         
-        def on_request_tempo(self, value):
+        def on_request_set_tempo(self, value):
             self.view._debug_2("Set tempo to " + str(value))
             self.sequence.tempo = int(value)
             
         def on_request_play_sequence(self):
             self.view._debug_2("Play sequence requested")
+            
+        def save_settings(self):
+            self.view._debug_2("Save settings requested")
             
         def save_sequence(self):
             self.view._debug_2("Save sequence requested")
