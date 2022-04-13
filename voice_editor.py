@@ -102,7 +102,7 @@ class Voice_Editor:
             voice_name = "Voice " + str(i+1)
             voice_name_list.append(voice_name)
         self.voice_combo = guizero.Combo(self.voice_controls_panel, grid=[1,0], options=voice_name_list,
-                                     height="fill", command=self._handle_set_voice)                
+                                     height="fill", command=self._handle_select_voice)                
         self.waveform_combo = guizero.Combo(self.voice_controls_panel, grid=[2,0], options=["Sine","Triangle","Sawtooth","Square"],
                                      height="fill", command=self._handle_set_waveform)
         
@@ -228,7 +228,7 @@ class Voice_Editor:
             voice_name_list.append(voice_name)
         self.voice_combo.destroy()
         self.voice_combo = guizero.Combo(self.voice_controls_panel, grid=[1,0], options=voice_name_list,
-                                     height="fill", command=self._handle_set_voice)
+                                     height="fill", command=self._handle_select_voice)
         voice_name = "Voice " + str(self.view.controller.voice_index + 1)
         self.view.update_combo(self.voice_combo, voice_name)
         waveform = self.view.controller.voice_params[self.view.controller.voice_index].waveform
@@ -425,10 +425,10 @@ class Voice_Editor:
         # Request new voice
         self.view.controller.on_request_new_voice()        
         
-    def _handle_set_voice(self, value):
+    def _handle_select_voice(self, value):
         self._debug_2("In _handle_set_voice: " + str(value))
         # pass on the number part of the string value
-        self.view.controller.on_request_voice(int(value[6:]) - 1)
+        self.view.controller.on_request_select_voice(int(value[6:]) - 1)
     
     def _handle_set_waveform(self, waveform):
         self._debug_2("In _handle_set_waveform()")
