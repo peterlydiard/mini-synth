@@ -75,6 +75,7 @@ class Controller:
         self.model.main(self.num_voices)
         self.view.main() # This function does not return control here.
         
+    # Calculate colours for different voices/instruments on graphs and charts.
     def make_voice_colour(self, voice_index):
         shade_step = int(256 / const.MAX_VOICES)
         # start with black.
@@ -94,6 +95,7 @@ class Controller:
         self._debug_2("Made colour: (" + str(red) + ", " + str(green) + ", " + str(blue) + ")")
         return (red, green, blue)
         
+    # Process request from view (user interface) for a new voice.
     def on_request_new_voice(self):
         self._debug_2("In on_request_new_voice() ")
         if self.num_voices < const.MAX_VOICES:
@@ -103,7 +105,8 @@ class Controller:
         else:
             self._debug_1("WARNING: number of voices is at maximum already.")
         
-    def on_request_voice(self, voice):
+    # Process request from view (user interface) to select an existing voice to display.
+    def on_request_select_voice(self, voice):
         self._debug_2("In on_request_voice: " + str(voice))
         vi = int(voice)
         if vi >= 0 and vi < const.MAX_VOICES:
@@ -114,6 +117,7 @@ class Controller:
         else:
             self._debug_1("ERROR: unexpected voice index = " + str(voice))
 
+    # Process request from view (user interface) to play the note for the given key and voice/instrument.
     def on_request_note(self, key, voice_index=-1):
         self._debug_2("In on_request_note(key, voice_index) = (" + str(key) + ", " + str(voice_index) + ")")
         self.current_key = key
@@ -121,13 +125,16 @@ class Controller:
             self.voice_index = voice_index
         self._play_current_note()            
         
+    # Process request from view (user interface) to set the basic waveform for the current voice/instrument.
     def on_request_waveform(self, waveform):
         self._debug_2("In on_request_waveform: " + waveform)
         self.voice_params[self.voice_index].waveform = waveform
         self.view.show_new_settings()
+        # Mark the old voice data as obsolete.
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the on/off ratio for a sawtooth or square wave.
     def on_request_width(self, width):
         self._debug_2("In on_request_width: " + str(width))
         voice = self.voice_params[self.voice_index]
@@ -139,84 +146,98 @@ class Controller:
         else:
             self._debug_1("Width of this waveform is fixed.")
 
+    # Process request from view (user interface) to adjust the attack time of the ADSR envelope.
     def on_request_attack(self, value):
         self._debug_2("In on_request_attack: " + str(value))
         self.voice_params[self.voice_index].attack = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the decay time of the ADSR envelope.
     def on_request_decay(self, value):
         self._debug_2("In on_request_decay: " + str(value))
         self.voice_params[self.voice_index].decay = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the sustain time of the ADSR envelope.
     def on_request_sustain(self, value):
         self._debug_2("In on_request_sustain: " + str(value))
         self.voice_params[self.voice_index].sustain_time = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the sustain level of the ADSR envelope.
     def on_request_sustain_level(self, value):
         self._debug_2("In on_request_sustain_level: " + str(value))
         self.voice_params[self.voice_index].sustain_level = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the release time of the ADSR envelope.
     def on_request_release(self, value):
         self._debug_2("In on_request_release: " + str(value))
         self.voice_params[self.voice_index].release = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the tremolo rate of the ADSR envelope.
     def on_request_tremolo_rate(self, value):
         self._debug_2("In on_request_tremolo_rate: " + str(value))
         self.voice_params[self.voice_index].tremolo_rate = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the tremolo depth of the ADSR envelope.
     def on_request_tremolo_depth(self, value):
         self._debug_2("In on_request_tremolo_depth: " + str(value))
         self.voice_params[self.voice_index].tremolo_depth = int(value)
         self._change_envelope()
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the fundamental fequency suppression of the tone.
     def on_request_harmonic_boost(self, value):
         self._debug_2("In on_request_harmonic_boost: " + str(value))
         self.voice_params[self.voice_index].harmonic_boost = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the vibrato rate of the tone.
     def on_request_vibrato_rate(self, value):
         self._debug_2("In on_request_vibrato_rate: " + str(value))
         self.voice_params[self.voice_index].vibrato_rate = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the vibrato depth of the tone.
     def on_request_vibrato_depth(self, value):
         self._debug_2("In on_request_vibrato_depth: " + str(value))
         self.voice_params[self.voice_index].vibrato_depth = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the number of unison voices in the tone.
     def on_request_unison_voices(self, value):
         self._debug_2("In on_request_unison_voices: " + str(value))
         self.voice_params[self.voice_index].unison_voices = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the frequency spread of unison voices in the tone.
     def on_request_unison_detune(self, value):
         self._debug_2("In on_request_unison_detune: " + str(value))
         self.voice_params[self.voice_index].unison_detune = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
         
+    # Process request from view (user interface) to adjust the ring modulator frequency applied to the tone.
     def on_request_ring_mod_rate(self, value):
         self._debug_2("In on_request_ring_mod_rate: " + str(value))
         self.voice_params[self.voice_index].ring_mod_rate = int(value)
         self.model.scratch_voice(self.voice_index)
         self._play_current_note()
-                   
+    
+    # Local helper function to display and play the current note as recently modified in the voice editor.
     def _play_current_note(self):
         self._debug_2("In _play_current_note().")        
         tone, frequency = self.model.fetch_tone(self.voice_index, self.current_key)
@@ -228,10 +249,12 @@ class Controller:
         else:
             self._debug_1("WARNING: No note in _play_current_note().")
             
+    # Process request from view (user interface) to play the current note.
     def on_request_play(self):
         self._debug_2("In on_request_play().")
         self._play_current_note()
             
+    # Process request from view (user interface) to play 100 notes. (All keys in order.)
     def on_request_test(self):
         self._debug_2("In on_request_test().")
         self._debug_2("\nDoing 100 note test")
@@ -256,6 +279,7 @@ class Controller:
         self._debug_1("100 notes in seconds = " + str(finish - start))
         self._debug_1("Time asleep in seconds = " + str(time_asleep))
 
+    # Process request from view (user interface) to add or remove a note on the sequence editor grid.
     def on_request_toggle_sequence_note(self, timeslot, voice_index, key):
         self._debug_2("In on_request_toggle_sequence_note: " + str(timeslot) + ", " + str(voice_index) + ", " + str(key))
         if self.sequence.notes[voice_index, timeslot, key] == 1:
@@ -268,14 +292,17 @@ class Controller:
             if timeslot >= self.sequence.length:
                 self.sequence.length = timeslot + 1
         
-    def on_request_beats(self, value):
+    # Process request from view (user interface) to set the beats per bar shown in the sequence editor.
+    def on_request_set_beats(self, value):
         self._debug_2("Set beats/bar to " + str(value))
         self.sequence.beats_per_bar = int(value)
         
-    def on_request_tempo(self, value):
+    # Process request from view (user interface) to set the bars per minute in the sequence editor.
+    def on_request_set_tempo(self, value):
         self._debug_2("Set tempo to " + str(value))
         self.sequence.tempo = int(value)
         
+    # Process request from view (user interface) to play the sequence.
     def on_request_play_sequence(self):
         self._debug_2("Play sequence requested")
         timeslot = 0
