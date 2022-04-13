@@ -78,7 +78,8 @@ efficiently.
 Different components of a unison may want to be spread out over the stereo field, implying that voices need to be generated
 in stereo. At present, apply_envelope makes a stereo note from a mono tone.
 
-Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience.
+Now, detuning is proportional to the tone frequency with 1 Hz steps for convenience. Not sure this is working correctly, as the
+unison effect seems to be greater with higher tone frequencies.
 
 Using 1000 ms tone samples and 1 Hz frequency resolution means that the waveform passes through zero at the start and end. This
 could enable the production of notes longer than 1000 ms. Vibrato and unison should not be a problem, if the tones used are
@@ -143,7 +144,8 @@ Use MIDI key numbers?
 
 For a sequencer, should note length be adjusted according to changes in tempo?
 
-Portamento-type pitch slides seem incompatible with a wavetable-based design as used here.
+Portamento-type pitch slides seem incompatible with a wavetable-based design as used here. Possibly some kind of resampling
+filter using the scipy.interpolate module could implement this function, but more study is needed.
 
 Perhaps envelope control of VCO pitch could be achieved for attack and sustain but not for release, which will move
 around with note length. The pitch offset during sustain may be best set to zero anyway. Inversion of ADSR is said to make
