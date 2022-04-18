@@ -25,8 +25,8 @@ def read_synth_data(filename):
                 
             print("synth_data.py: Data read from file: " + filename)
 
-    except:
-        print("synth_data.py: WARNING: file: \'" + filename + "\' not found, or wrong format.")
+    except OSError as exception:
+        print("synth_data.py: WARNING: file: \'" + filename + "\' raised exception " + exception)
         
     return names, values
 

@@ -7,7 +7,7 @@ import numpy as np
 import synth_constants as const
 import synth_view
 import synth_model
-import synth_settings
+import synth_data
 
 # ------------------------------
 # Variables
@@ -385,10 +385,10 @@ class Controller:
             values.append(int(self.voice_params[vi].sustain_level))
             names.append(name_prefix + "release")
             values.append(int(self.voice_params[vi].release))
-        synth_settings.write_synth_data("synth_settings.txt", names, values)
+        synth_data.write_synth_data("synth_settings.txt", names, values)
         
     def restore_settings(self):
-        names, values = synth_settings.read_synth_data("synth_settings.txt")
+        names, values = synth_data.read_synth_data("synth_settings.txt")
         for i in range(len(names)):
             if names[i] == "sample_rate":
                 self.sample_rate = int(values[i])
@@ -457,11 +457,11 @@ class Controller:
                     if self.sequence.notes[vi, timeslot, key] > 0:
                         names.append(voice_name + timeslot_name + key_name)
                         values.append(int(self.sequence.notes[vi, timeslot, key]))
-        synth_settings.write_synth_data("sequence.txt", names, values)
+        synth_data.write_synth_data("sequence.txt", names, values)
 
 
     def restore_sequence(self):
-        names, values = synth_settings.read_synth_data("sequence.txt")
+        names, values = synth_data.read_synth_data("sequence.txt")
         for i in range(len(names)):
             if names[i] == "sequence_number":
                 self.sequence.number = int(values[i])
