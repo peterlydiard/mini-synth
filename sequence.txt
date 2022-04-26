@@ -1,7 +1,7 @@
 sequence_number,0
 sequence_name,Blank
 beats_per_bar,4
-sequence_tempo,111
+sequence_tempo,121
 voice_0_timeslot_17_key_21,1
 voice_0_timeslot_18_key_22,1
 voice_0_timeslot_19_key_19,1
