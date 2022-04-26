@@ -268,7 +268,7 @@ class Controller:
     
     def _run_test(self):
         self._debug_2("In _run_test().")
-        self._debug_2("\nDoing 100 note test")
+        self._debug_2("Doing 100 note test")
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
         next_time = start + 0.100
