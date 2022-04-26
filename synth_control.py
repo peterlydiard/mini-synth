@@ -3,6 +3,7 @@
 # ------------------------------
 
 import time
+import threading
 import numpy as np
 import synth_constants as const
 import synth_view
@@ -62,6 +63,8 @@ class Controller:
         self.view = synth_view.View(self)
         self.model = synth_model.Model(self, const.SAMPLE_RATE)
         self.sequence = Sequence()
+        self.thread_1 = None
+        self.thread_2 = None
         
     def main(self):
         self._debug_2("In main of controller")
@@ -257,6 +260,14 @@ class Controller:
     # Process request from view (user interface) to play 100 notes. (All keys in order.)
     def on_request_test(self):
         self._debug_2("In on_request_test().")
+        if not self.thread_1 is None:
+            self._debug_2("Waiting for previous test to complete.")
+            self.thread_1.join()
+        self.thread_1 = threading.Thread(target=self._run_test)
+        self.thread_1.start()
+    
+    def _run_test(self):
+        self._debug_2("In _run_test().")
         self._debug_2("\nDoing 100 note test")
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))
@@ -304,7 +315,15 @@ class Controller:
         
     # Process request from view (user interface) to play the sequence.
     def on_request_play_sequence(self):
-        self._debug_2("Play sequence requested")
+        self._debug_2("In on_request_play_sequence()")
+        if not self.thread_2 is None:
+            self._debug_2("Waiting for previous sequence to complete.")
+            self.thread_2.join()
+        self.thread_2 = threading.Thread(target=self._play_sequence)
+        self.thread_2.start()
+
+    def _play_sequence(self):
+        self.debug_2("In _play_sequence()")
         timeslot = 0
         note_spacing_secs = 60.0 / (self.sequence.tempo * self.sequence.beats_per_bar)
         start = time.perf_counter()
