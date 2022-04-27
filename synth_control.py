@@ -323,7 +323,7 @@ class Controller:
         self.thread_2.start()
 
     def _play_sequence(self):
-        self.debug_2("In _play_sequence()")
+        self._debug_2("In _play_sequence()")
         timeslot = 0
         note_spacing_secs = 60.0 / (self.sequence.tempo * self.sequence.beats_per_bar)
         start = time.perf_counter()

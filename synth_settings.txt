@@ -1,7 +1,7 @@
 sample_rate,44100
 frequency,466
 num_voices,7
-voice_index,2
+voice_index,1
 voice_0_number,0
 voice_0_name,Unused
 voice_0_waveform,Sine
@@ -14,9 +14,9 @@ voice_0_unison_detune,20
 voice_0_ring_mod_rate,0
 voice_0_tremolo_rate,0
 voice_0_tremolo_depth,0
-voice_0_attack,9
-voice_0_decay,18
-voice_0_sustain_time,34
+voice_0_attack,2
+voice_0_decay,30
+voice_0_sustain_time,10
 voice_0_sustain_level,64
 voice_0_release,20
 voice_1_number,0
@@ -29,12 +29,12 @@ voice_1_vibrato_depth,0
 voice_1_unison_voices,1
 voice_1_unison_detune,0
 voice_1_ring_mod_rate,0
-voice_1_tremolo_rate,4
-voice_1_tremolo_depth,100
+voice_1_tremolo_rate,26
+voice_1_tremolo_depth,10
 voice_1_attack,13
 voice_1_decay,16
 voice_1_sustain_time,40
-voice_1_sustain_level,57
+voice_1_sustain_level,63
 voice_1_release,20
 voice_2_number,0
 voice_2_name,Unused
