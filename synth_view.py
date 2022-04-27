@@ -108,7 +108,13 @@ class View:
     def show_sequence(self):
         self._debug_2("In show_sequence()")
         if self.sequence_window_open == True:
-            self.seq_editor.show_sequence()           
+            self.seq_editor.show_sequence()   
+
+
+    def show_cursor(self, timeslot):
+        self._debug_2("In show_cursor: timeslot = " + str(timeslot))
+        if self.sequence_window_open == True:
+            self.seq_editor.show_cursor(timeslot)           
 
         
     def play_sound(self, wave):

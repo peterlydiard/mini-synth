@@ -340,12 +340,13 @@ class Controller:
                         note = self.model.apply_envelope(vi, tone) 
                         if not note is None:
                             self.view.play_sound(note)
+            timeslot += 1
+            self.view.show_cursor(timeslot) # show next timeslot on screen
             now = time.perf_counter()
             sleep_time = next_time - now
             time_asleep += sleep_time
             time.sleep(max(0, sleep_time))
             next_time += note_spacing_secs
-            timeslot += 1
         finish = time.perf_counter()
         self._debug_1("Sequence duration, secs = " + str(finish - start))
         self._debug_1("Time asleep in seconds = " + str(time_asleep))                               

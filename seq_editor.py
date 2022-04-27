@@ -25,6 +25,7 @@ class Seq_Editor:
         self.view = view
         self.seq_voice_checks = []
         self.seq_offset = 0
+        self.old_pixel_colours = []
        
 
     def main(self):
@@ -121,6 +122,18 @@ class Seq_Editor:
         except:
             self._debug_1("Fatal ERROR in show_sequence().")
             
+    def show_cursor(self, timeslot):
+        self._debug_2("In show_cursor: timeslot =" + str(timeslot))    
+        if timeslot > 1 and len(self.old_pixel_colours) == 2:
+            # restore original pixel colours
+            self.board.set_pixel(timeslot+2, 0, self.old_pixel_colours[0])
+            self.board.set_pixel(timeslot+2, const.NUM_KEYS-1, self.old_pixel_colours[1])
+        # remember pixel colours, then draw a grey ones
+        self.old_pixel_colours = []
+        self.old_pixel_colours.append(self.board.get_pixel(timeslot+3, 0))
+        self.board.set_pixel(timeslot+3, 0, (64,64,64))
+        self.old_pixel_colours.append(self.board.get_pixel(timeslot+3, const.NUM_KEYS-1))
+        self.board.set_pixel(timeslot+3, const.NUM_KEYS-1, (64,64,64))
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
