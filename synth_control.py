@@ -49,6 +49,7 @@ class Sequence:
         self.beats_per_bar = 4
         self.tempo = 100
         self.length = 0
+        self.seq_offset = 0
         self.notes = np.zeros((const.MAX_VOICES, const.MAX_TIMESLOTS, const.NUM_KEYS), dtype=int)
         
 class Controller:
@@ -312,7 +313,11 @@ class Controller:
     def on_request_set_tempo(self, value):
         self._debug_2("Set tempo to " + str(value))
         self.sequence.tempo = int(value)
-        
+
+    def on_request_set_seq_offset(self, value):
+        self._debug_2("Set sequence offset to " + str(value))
+        self.sequence.seq_offset = int(value)
+                
     # Process request from view (user interface) to play the sequence.
     def on_request_play_sequence(self):
         self._debug_2("In on_request_play_sequence()")
@@ -324,7 +329,7 @@ class Controller:
 
     def _play_sequence(self):
         self._debug_2("In _play_sequence()")
-        timeslot = 0
+        timeslot = self.sequence.seq_offset
         note_spacing_secs = 60.0 / (self.sequence.tempo * self.sequence.beats_per_bar)
         start = time.perf_counter()
         self._debug_1("Timer start = " + str(start))

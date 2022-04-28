@@ -122,18 +122,21 @@ class Seq_Editor:
         except:
             self._debug_1("Fatal ERROR in show_sequence().")
             
+    # Draw moving grey pixels on the board to show the current timeslot being played.
     def show_cursor(self, timeslot):
-        self._debug_2("In show_cursor: timeslot =" + str(timeslot))    
-        if timeslot > 1 and len(self.old_pixel_colours) == 2:
+        self._debug_2("In show_cursor: timeslot = " + str(timeslot)) 
+        cursor_x = max(0, timeslot - self.seq_offset)
+        if cursor_x > 1 and len(self.old_pixel_colours) == 2:
             # restore original pixel colours
-            self.board.set_pixel(timeslot+2, 0, self.old_pixel_colours[0])
-            self.board.set_pixel(timeslot+2, const.NUM_KEYS-1, self.old_pixel_colours[1])
-        # remember pixel colours, then draw a grey ones
-        self.old_pixel_colours = []
-        self.old_pixel_colours.append(self.board.get_pixel(timeslot+3, 0))
-        self.board.set_pixel(timeslot+3, 0, (64,64,64))
-        self.old_pixel_colours.append(self.board.get_pixel(timeslot+3, const.NUM_KEYS-1))
-        self.board.set_pixel(timeslot+3, const.NUM_KEYS-1, (64,64,64))
+            self.board.set_pixel(cursor_x+2, 0, self.old_pixel_colours[0])
+            self.board.set_pixel(cursor_x+2, const.NUM_KEYS-1, self.old_pixel_colours[1])
+        # remember pixel colours, then draw grey ones
+        if cursor_x + 3 < self.board.width:
+            self.old_pixel_colours = []
+            self.old_pixel_colours.append(self.board.get_pixel(cursor_x+3, 0))
+            self.board.set_pixel(cursor_x+3, 0, (64,64,64))
+            self.old_pixel_colours.append(self.board.get_pixel(cursor_x+3, const.NUM_KEYS-1))
+            self.board.set_pixel(cursor_x+3, const.NUM_KEYS-1, (64,64,64))
 
     def _closed_sequence_editor(self):
         self._debug_1("Sequence editor closed")
@@ -171,6 +174,7 @@ class Seq_Editor:
         self._debug_2("In _handle_scroll()")
         self.seq_offset = int(value)
         self._handle_update_board()
+        self.view.controller.on_request_set_seq_offset(value)
         
     def _handle_toggle_seq_note(self, x, y):
         self._debug_2("In _handle_set_seq_note: " +  str(x) + ", " + str(y))
