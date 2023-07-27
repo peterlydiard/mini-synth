@@ -51,7 +51,7 @@ voice_3_timeslot_12_key_6,1
 voice_3_timeslot_13_key_18,1
 voice_3_timeslot_15_key_16,1
 voice_3_timeslot_16_key_0,1
-voice_3_timeslot_20_key_4,1
+voice_3_timeslot_19_key_7,1
 voice_3_timeslot_24_key_2,1
 voice_3_timeslot_25_key_21,1
 voice_3_timeslot_26_key_22,1
